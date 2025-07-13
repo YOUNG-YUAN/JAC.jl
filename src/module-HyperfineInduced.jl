@@ -282,6 +282,7 @@ function  amplitude(kind::String, mp::EmMultipole, gauge::EmGauge, omega::Float6
 end
 ==#
 
+#== Replaced by Wu Wang; 13.7.205
 """
 `HyperfineInduced.amplitude(kind::String, mp::EmMultipole, gauge::EmGauge, omega::Float64, 
                             finalLevel::IJF_Level, initialLevel::IJF_Level, grid::Radial.Grid; printout=true)`  
@@ -328,8 +329,59 @@ function  amplitude(kind::String, mp::EmMultipole, gauge::EmGauge, omega::Float6
     end
     
     return( amp )
-end
+end  ==#
 
+
+"""
+`HyperfineInduced.amplitude(kind::String, mp::EmMultipole, gauge::EmGauge, omega::Float64, 
+                            finalLevel::IJF_Level, initialLevel::IJF_Level, grid::Radial.Grid; printout=true)`  
+    ... to compute the radiative (mulipole) transition amplitude between two hyperfine levels; 
+        a amplitude::ComplexF64 is returned.
+"""
+function  amplitude(kind::String, mp::EmMultipole, gauge::EmGauge, omega::Float64, 
+                    finalLevel::IJF_Level, initialLevel::IJF_Level, grid::Radial.Grid; printout=true)
+    function doublefactorial(L::Int64)
+        # Need to be implemented properly
+        if       L == 3     return(   3 )
+        elseif   L == 5     return(  15 )
+        elseif   L == 7     return( 105 )
+        else     error("stop a")
+        end 
+    end
+
+    if kind == "emission"
+        amp = ComplexF64(0.)
+        for  (ib, ibState)  in  enumerate(initialLevel.basis)
+            for  (fb, fbState)  in  enumerate(finalLevel.basis)
+                # First, compute the nuclear transition, if possible
+                if   abs(finalLevel.mc[fb] * initialLevel.mc[ib]) > 0.8  &&   fbState.levelJ.index == ibState.levelJ.index
+                    Lx=2*mp.L+1
+                    Ly=doublefactorial(Lx)
+                    Lz=sqrt((mp.L+1)*Lx/4/pi/mp.L)*(Defaults.getDefaults("alpha") * omega)^mp.L/Ly
+                    amp = amp + AngularMomentum.phaseFactor([fbState.isomer.spinI, +1, AngularJ64(mp.L), +1, ibState.F, +1, ibState.levelJ.J]) * 
+                                AngularMomentum.Wigner_6j(fbState.isomer.spinI, ibState.isomer.spinI, AngularJ64(mp.L), 
+                                                          ibState.F, fbState.F, ibState.levelJ.J)                                              *
+                                Hfs.computeInteractionAmplitudeM(mp, fbState.isomer, ibState.isomer)                                           *
+                                Lz
+                end
+                # Second, compute the contributions due to the change in the electronic state
+                if (ibState.levelJ.index==initialLevel.index && ibState.F==initialLevel.F && ibState.isomer.spinI==initialLevel.I) || 
+                   (fbState.levelJ.index==finalLevel.index && fbState.F== finalLevel.F && fbState.isomer.spinI==finalLevel.I)
+                    if fbState.isomer.spinI==ibState.isomer.spinI                   
+                        amp = amp + finalLevel.mc[fb] * initialLevel.mc[ib] * 
+                                AngularMomentum.phaseFactor([ibState.levelJ.J, +1, AngularJ64(mp.L), +1, fbState.F, +1, fbState.isomer.spinI])     *                       
+                        AngularMomentum.Wigner_6j(fbState.levelJ.J, ibState.levelJ.J, AngularJ64(mp.L), 
+                        ibState.F, fbState.F, fbState.isomer.spinI)                           *
+                                PhotoEmission.amplitude_Wu(kind, mp, gauge, omega, fbState.levelJ, ibState.levelJ, grid, display=false)                         
+                   end
+                end             
+            end
+        end
+    else   error("stop a")
+    end
+    
+    return( amp )
+end
 
 
 """

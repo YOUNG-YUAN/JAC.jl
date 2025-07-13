@@ -1555,7 +1555,7 @@ function Basics.extractShellList(confList::Array{Configuration,1})
     
     shellList = unique(shellList)
     shellList = sort(shellList)
-    println(">> Generated shell list:  $shellList ")
+    ## println(">> Generated shell list:  $shellList ")
     
     return( shellList )
 end
@@ -1579,6 +1579,25 @@ function Basics.extractSubshellList(confList::Array{ConfigurationR,1})
     println(">> Generated subshell list:  $subshList ")
     
     return( subshList )
+end
+
+
+"""
+`Basics.extractSubshellList(conf::Configuration, orbitals::Dict{Subshell, Orbital})`  
+    ... extract all (relativistic) subshells that do NPT have an orbital in orbitals. 
+        A subshellList::Array{Subshell,1} is returned.
+"""
+function Basics.extractSubshellList(conf::Configuration, orbitals::Dict{Subshell, Orbital})
+    shells    = Basics.extractShellList([conf]);    allSubshells = Subshell[];   notSubshells = Subshell[]
+    for  shell in shells    append!(allSubshells, Basics.shellSplitIntoSubshells(shell))   end
+    
+    for subsh in allSubshells
+        if haskey(orbitals, subsh)    else   push!(notSubshells, subsh)   end
+    end
+    
+    ##x @show allSubshells, notSubshells
+    
+    return( notSubshells )
 end
 
 

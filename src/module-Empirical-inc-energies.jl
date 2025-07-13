@@ -174,11 +174,15 @@ function  totalEnergy(Z::Int64, conf::Configuration; data::PeriodicTable.Abstrac
     shellIndex[Shell("6s")] = 22;    shellIndex[Shell("6p")] = 24
     
     # Use the binding energies of the neutral atom to obtain a useful total binding energy
-    totalE = 0.
-    for  (sh,occ) in conf.shells
-        if  sh in [Shell("5g"), Shell("6d"), Shell("6f"), Shell("6g")]  wb = 2.0;  @warn("Not defined shell $sh in data set $data"); continue   end
-        wb = wa[ shellIndex[sh] ]       
-        if  wb == -1.   wb = 2.0;  @warn("No useful binding energy found for shell $sh in data set $data")  end
+    totalE = 0.;   wb = 0.
+    for  (sh, occ) in conf.shells
+        if  sh in [Shell("5f"), Shell("5g"), Shell("6d"), Shell("6f"), Shell("6g"), Shell("6h")]  || sh.n >= 7
+            wb = 1.0;  @warn("Not defined shell $sh in data set $data"); continue   
+        elseif   shellIndex[sh] == -1
+            wb = 2.0;  @warn("No useful binding energy found for shell $sh in data set $data")
+        else 
+            wb = wa[ shellIndex[sh] ]
+        end
         totalE = totalE - occ * wb
     end
         

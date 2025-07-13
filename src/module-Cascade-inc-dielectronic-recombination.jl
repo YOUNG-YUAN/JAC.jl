@@ -235,14 +235,103 @@ end
 
 
 """
+`Cascade.generateCaptureConfigurations(multiplets::Array{Multiplet,1},  coreConfList::Array{Configuration,1}, 
+                                       scheme::DielectronicRecombinationScheme, nm::Nuclear.Model, grid::Radial.Grid)`  
+    ... checks and compiles are doubly-excited configurations due to an (dielectronic) electron capture into the given multiplets,
+        for which the total energy is expected to be in the interval E_initial < E_Captured < E_initial + maxExcitationEnergy.
+        A ConfList::Array{Configuration,1} is returned that contains all the doubly-excited configurations. Moreover, a neat table 
+        of all configurations is printed to check and control for the correct input.
+            
+        In practice, the generation of useful doubly-excited configurations is not simple as long as no SCF computations
+        are performed explicitly. We here apply the following strategy to keep the computations feasible:
+        (1) Compute a mean-field basis for the coreConfList to obtain a proper set of orbitals.
+        (2) Generate a set of hydrogenic orbitals for all (n,l) shells with n <= nMax and l <= lMax; the orbitals
+            are generated for the nuclear charge Zeff = Z - NoElectrons(core) + 1
+        (3) Set-up and diagonalize a multiplet for each doubly-excited configuration; determine eLowest, eHighest
+            as the lowest and highest level energies.
+        (4) Take the energy conditions in the sloppy form:
+                eMin - 1. <= eLowest <= eMax + 1. || eMin - 1. <= eHighest <= eMax + 1.
+            to make sure that no relevant configurations are missing
+        (5) Report about energies   eMin, eLowest, eHighest eMax  
+            to modify the energy condition if appropriate        
+"""
+function generateCaptureConfigurations(multiplets::Array{Multiplet,1},  coreConfList::Array{Configuration,1}, 
+                                       scheme::DielectronicRecombinationScheme, nm::Nuclear.Model, grid::Radial.Grid)
+    # Run through all configurations with an additional electron and check whether the total energy is within the given range
+    captureConfList = Configuration[];    allSubshells = Subshell[] 
+    nMax = scheme.maxIntoShell.n;   lMax = scheme.maxIntoShell.l;    eMin = 0.
+    for  mp  in  multiplets    if  mp.levels[1].energy < eMin    eMin = mp.levels[1].energy   end   end 
+    for  n = 1:nMax,   l = 0:lMax     # Determine all required subshells
+        if  lMax > nMax - 1    continue   end
+        subshells = Basics.shellSplitIntoSubshells(Shell(n,l))
+        for subsh in subshells   push!(allSubshells, subsh)   end
+    end
+
+    eMax = eMin + scheme.maxExcitationEnergy
+    @show eMin, eMax, nMax, lMax
+    
+    # Compute a mean-field basis for coreConfList
+    println(">> Generate mean-field multiplet for $(length(coreConfList)) excited core configurations \n $coreConfList \n ...  ")
+    asfSettings = AsfSettings(AsfSettings(), scField=Basics.DFSField(1.0))
+    mp          = SelfConsistent.performSCF(coreConfList, nm, grid, asfSettings, printout=true)
+    println(" ... mean-field multiplet done")
+    
+    # Generate hydrogenic spectrum for nuclear charge Zx 
+    nmx = Nuclear.Model(nm; Z = nm.Z - coreConfList[1].NoElectrons + 1.)
+    print(">> Generate hydrogenic spectrum for nuclear Z_eff = $(nmx.Z), nMax = $nMax and lMax = $lMax ...  ")
+    Defaults.setDefaults("standard grid", grid)
+    primitives          = BsplinesN.generatePrimitives(grid)  
+    hydrogenicOrbitals  = BsplinesN.generateOrbitalsHydrogenic(allSubshells, nm, primitives; printout=false)
+    
+    println(" ... hydrogenic spectrum done")
+    
+    # Generate doubly-excited configurations, calculate the multiplet with given basis and compare energies
+    # for the applied energy condition(s); report about energies; accept or refuse additional configuration
+    println(">> Loop through all -- maximally $(nMax*(lMax+1)*length(coreConfList)) -- doubly-excited configurations " *
+            "and compare energies ...")
+    nCount = 0
+    for  n = 1:nMax,   l = 0:lMax 
+        if  l > n - 1    continue   end
+        newConfList = Basics.generateConfigurationsWithAdditionalElectron(coreConfList, [Shell(n,l)])
+        for  conf in newConfList
+            orbitals  = copy(mp.levels[1].basis.orbitals)
+            subshells = Basics.extractSubshellList(conf, orbitals)
+            for  subsh in subshells   orbitals[subsh] = hydrogenicOrbitals[subsh]   end
+            asfSettings = AsfSettings(AsfSettings(), scField = Basics.DFSField(1.0), 
+                                      startScfFrom = ManyElectron.StartFromPrevious(orbitals))
+            if true  
+                # Accept all configurations
+                eLowest   = eMin;     eHighest = eMin;    accepted = false
+            elseif false
+                basis   = SelfConsistent.initializeBasis([conf], nm, primitives, asfSettings)
+                mp      = Hamiltonian.performCI(basis, nm, grid, AsfSettings(), printout=false)
+                eLowest   = mp.levels[1].energy;     eHighest = mp.levels[end].energy;    accepted = false
+            elseif true
+                mp      = Hamiltonian.performCIwithFrozenOrbitals([conf], orbitals, nm, grid, asfSettings, printout=false)
+                eLowest   = mp.levels[1].energy;     eHighest = mp.levels[end].energy;    accepted = false
+            end
+            if  eMin - 4.0 <= eLowest <=  eMax + 4.0   ||   eMin - 4.0 <= eHighest <=  eMax + 4.0
+                push!(captureConfList, conf);   accepted = true
+            end
+            nCount = nCount + 1
+            println("  $nCount)  $conf .. $accepted   with  eMin = $eMin  [eL, eH] = [$eLowest, $eHighest]  eMax = $eMax ")
+        end
+    end
+    println("   ... loop through all doubly-excited configurations done")
+
+    return( captureConfList )
+end
+
+
+"""
 `Cascade.generateConfigurationsForDielectronicCapture(multiplets::Array{Multiplet,1},  scheme::DielectronicRecombinationScheme, 
                                                     nm::Nuclear.Model, grid::Radial.Grid)`  
-    ... generates all possible doubly-excited configurations due to (dielectronic) electron capture into the given multiplets.
+    ... generates all possible doubly-excited configurations due to an (dielectronic) electron capture into the given multiplets.
         The number and type of such doubly-generated configurations depend on (1) the maximum (electron) energy for capturing an electron
         that is closely related to the (maximum) temperature of the plasma; (2) the fromShells from which (and how many displacements)
-        are accepted as well as (3) the maximum principle and orbital angular quantum number of the additional (to-) shellsthe fromShells
-        into which electrons excited and/or captured. A Tuple(initialConfList::Array{Configuration,1}, confList::Array{Configuration,1}) 
-        is returned.
+        are accepted as well as (3) the maximum principle and orbital angular quantum number of the additional toShells into which 
+        electrons excited and/or captured. A Tuple(initialConfList::Array{Configuration,1}, captureConfList::Array{Configuration,1},
+        decayConfList::Array{Configuration,1}) is returned.
 """
 function generateConfigurationsForDielectronicCapture(multiplets::Array{Multiplet,1},  scheme::DielectronicRecombinationScheme, 
                                                     nm::Nuclear.Model, grid::Radial.Grid)
@@ -254,7 +343,11 @@ function generateConfigurationsForDielectronicCapture(multiplets::Array{Multiple
     end
     coreConfList    = Basics.generateConfigurations(initialConfList, scheme.excitationFromShells, scheme.excitationToShells, 
                                                     scheme.NoExcitations)
-    captureConfList = Basics.generateConfigurationsWithElectronCapture(coreConfList, scheme.excitationFromShells, scheme.intoShells, 0)
+    if scheme.calcWithoutIntoShells
+        captureConfList = Cascade.generateCaptureConfigurations(multiplets, coreConfList, scheme, nm, grid)
+    else
+        captureConfList = Basics.generateConfigurationsWithElectronCapture(coreConfList, scheme.excitationFromShells, scheme.intoShells, 0)
+    end
     decayConfList   = Basics.generateConfigurationsWithElectronCapture(coreConfList, scheme.excitationFromShells, scheme.decayShells, 0)
     @show initialConfList
     @show coreConfList

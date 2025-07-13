@@ -92,15 +92,17 @@ function performCI(basis::Basis, nm::Nuclear.Model, grid::Radial.Grid, settings:
     
     # Display all level energies and energy splittings
     if  printout
-        Basics.tabulate(stdout, "multiplet: energies", mp, levelNos)
-        Basics.tabulate(stdout, "multiplet: energy relative to immediately lower level",    mp, levelNos)
-        Basics.tabulate(stdout, "multiplet: energy of each level relative to lowest level", mp, levelNos)
+        Basics.tabulate(stdout, mp, levelNos)
+        ##x Basics.tabulate(stdout, "multiplet: energies", mp, levelNos)
+        ##x Basics.tabulate(stdout, "multiplet: energy relative to immediately lower level",    mp, levelNos)
+        ##x Basics.tabulate(stdout, "multiplet: energy of each level relative to lowest level", mp, levelNos)
     end
     printSummary, iostream = Defaults.getDefaults("summary flag/stream")
     if  printSummary     
-        Basics.tabulate(iostream, "multiplet: energies", mp, levelNos)
-        Basics.tabulate(iostream, "multiplet: energy relative to immediately lower level",    mp, levelNos)
-        Basics.tabulate(iostream, "multiplet: energy of each level relative to lowest level", mp, levelNos)
+        Basics.tabulate(iostream, mp, levelNos)
+        ##x Basics.tabulate(iostream, "multiplet: energies", mp, levelNos)
+        ##x Basics.tabulate(iostream, "multiplet: energy relative to immediately lower level",    mp, levelNos)
+        ##x Basics.tabulate(iostream, "multiplet: energy of each level relative to lowest level", mp, levelNos)
     end
 
     return( mp )
@@ -205,15 +207,17 @@ function performCIwithFrozenOrbitals(configs::Array{Configuration,1}, frozenOrbi
     
     # Display all level energies and energy splittings
     if  printout
-        Basics.tabulate(stdout, "multiplet: energies", mp, levelNos)
-        Basics.tabulate(stdout, "multiplet: energy relative to immediately lower level",    mp, levelNos)
-        Basics.tabulate(stdout, "multiplet: energy of each level relative to lowest level", mp, levelNos)
+        Basics.tabulate(stdout, mp, levelNos)
+        ##x Basics.tabulate(stdout, "multiplet: energies", mp, levelNos)
+        ##x Basics.tabulate(stdout, "multiplet: energy relative to immediately lower level",    mp, levelNos)
+        ##x Basics.tabulate(stdout, "multiplet: energy of each level relative to lowest level", mp, levelNos)
     end
     printSummary, iostream = Defaults.getDefaults("summary flag/stream")
     if  printSummary  &&  printout    
-        Basics.tabulate(iostream, "multiplet: energies", mp, levelNos)
-        Basics.tabulate(iostream, "multiplet: energy relative to immediately lower level",    mp, levelNos)
-        Basics.tabulate(iostream, "multiplet: energy of each level relative to lowest level", mp, levelNos)
+        Basics.tabulate(iostream, mp, levelNos)
+        ##x Basics.tabulate(iostream, "multiplet: energies", mp, levelNos)
+        ##x Basics.tabulate(iostream, "multiplet: energy relative to immediately lower level",    mp, levelNos)
+        ##x Basics.tabulate(iostream, "multiplet: energy of each level relative to lowest level", mp, levelNos)
     end
 
     return( mp )

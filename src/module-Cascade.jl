@@ -152,6 +152,13 @@ end
 
     + multipoles            ::Array{EmMultipole}           
         ... Multipoles of the radiation field that are to be included into the radiative stabilization processes.
+    + calcWithoutIntoShells ::Bool
+        ... If true, the intoShells are not considered explicitly but deterined automatically from the given 
+            initial configurations, the from shells as well as the total excitation energy. This features 
+            should be set to true, whenever the intoShells are dificult to determine in advance.
+    + maxIntoShell          ::Shell   
+        ... maximum shell into which an electron is captured, if no intoShells are given explicitly (calcWithoutIntoShells=true).
+            From this maxIntoShell, the maximum n_max and l_max is derived for generating the doubly-excited configurations
     + maxExcitationEnergy   ::Float64                 
         ... Maximum excitation energy [in a.u.] with regard to the reference configurations/levels that restrict the number 
             of excited configurations to be taken into accout. This maximum excitation energy has to be derived from the maximum 
@@ -176,6 +183,8 @@ end
 """
 struct   DielectronicRecombinationScheme  <:  Cascade.AbstractCascadeScheme
     multipoles              ::Array{EmMultipole}  
+    calcWithoutIntoShells   ::Bool
+    maxIntoShell            ::Shell       
     maxExcitationEnergy     ::Float64   
     electronEnergyShift     ::Float64 
     minPhotonEnergy         ::Float64                 
@@ -191,7 +200,7 @@ end
 `Cascade.DielectronicRecombinationScheme()`  ... constructor for an 'default' instance of a Cascade.DielectronicRecombinationScheme.
 """
 function DielectronicRecombinationScheme()
-    DielectronicRecombinationScheme([E1], 1.0, 0., 0., 1, Shell[], Shell[], Shell[], Shell[] )
+    DielectronicRecombinationScheme([E1], false, Shell(1,0), 1.0, 0., 0., 1, Shell[], Shell[], Shell[], Shell[] )
 end
 
 
@@ -206,6 +215,8 @@ end
 function Base.show(io::IO, scheme::DielectronicRecombinationScheme)
     sa = Base.string(scheme);                print(io, sa, "\n")
     println(io, "multipoles:                 $(scheme.multipoles)  ")
+    println(io, "calcWithoutIntoShells:      $(scheme.calcWithoutIntoShells)  ")
+    println(io, "maxIntoShell:               $(scheme.maxIntoShell)  ")
     println(io, "maxExcitationEnergy:        $(scheme.maxExcitationEnergy)  ")
     println(io, "electronEnergyShift:        $(scheme.electronEnergyShift)  ")
     println(io, "minPhotonEnergy:            $(scheme.minPhotonEnergy)  ")

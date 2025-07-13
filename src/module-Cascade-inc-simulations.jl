@@ -1459,7 +1459,45 @@ function simulatePhotoAbsorptionSpectrum(simulation::Cascade.Simulation,
         for  line in linesP
             iConf = Basics.extractLeadingConfiguration(line.initialLevel)
             fConf = Basics.extractLeadingConfiguration(line.finalLevel)
+            diffInsideShells = 0;   diffOutsideShells = 0;   addLine = true;   diff = 0
+            for  (sh, occ) in  iConf.shells
+                if  sh  in  paProperty.shells    
+                    diff = occ - fConf.shells[sh]
+                    if      diff == 1    diffInsideShells = diffInsideShells + 1
+                    elseif  diff >  1    ||  diff < 0       addLine = false
+                    end     
+                else    diffOutsideShells = diffOutsideShells + abs(occ - fConf.shells[sh]) 
+                end
+                ##x @show  paProperty.shells, sh, diff, diffInsideShells, diffOutsideShells, addLine
+            end
+            if  addLine  &&  diffInsideShells == 1  &&   diffOutsideShells == 0
+                push!(newLinesP, line)  
+                ##x  @show paProperty.shells, diffInsideShells, diffOutsideShells
+            end
         end
+        linesP = newLinesP
+    
+        for  line in linesE
+            iConf = Basics.extractLeadingConfiguration(line.initialLevel)
+            fConf = Basics.extractLeadingConfiguration(line.finalLevel)
+            diffInsideShells = 0;   diffOutsideShells = 0;   addLine = true;   diff = 0
+            for  (sh, occ) in  iConf.shells
+                if  sh  in  paProperty.shells    
+                    diff = occ - fConf.shells[sh]
+                    if      diff == 1    diffInsideShells = diffInsideShells + 1
+                    elseif  diff >  1    ||  diff < 0       addLine = false
+                    end     
+                else    diffOutsideShells = diffOutsideShells + abs(occ - fConf.shells[sh]) 
+                end
+            end
+            if  addLine  &&  diffInsideShells == 1  &&   diffOutsideShells == 0
+                push!(newLinesE, line)  
+            end
+        end
+        linesE = newLinesE
+    
+        println(stdout, "\n  Number of (reduced) photoionization lines = $(length(linesP)) " *
+                        "\n  Number of (reduced) photoexcitation lines = $(length(linesE)) \n ")
     end
     
     # Define an empty array of proper size
@@ -1470,12 +1508,15 @@ function simulatePhotoAbsorptionSpectrum(simulation::Cascade.Simulation,
         for  (p, pEnergy)  in  enumerate(pEnergies)
             cs = Basics.EmProperty(0.)
             for  (i, initialLevel)  in  enumerate(initialLevels)
+                # The selection of individual subshells has been considered above
+                cs = cs + initialWeights[i] * PhotoIonization.interpolateCrossSection(linesP, pEnergy, initialLevel)
+                #== 
                 if  length(paProperty.shells) != 0
                     # Add cross section data only if they refer to shells
                     error("aa: not yet implemented")
                 else
                     cs = cs + initialWeights[i] * PhotoIonization.interpolateCrossSection(linesP, pEnergy, initialLevel)
-                end 
+                end ==#
             end 
             crossSections[p] = crossSections[p] + cs
         end
@@ -1488,13 +1529,16 @@ function simulatePhotoAbsorptionSpectrum(simulation::Cascade.Simulation,
         for  (p, pEnergy)  in  enumerate(pEnergies)
             cs = Basics.EmProperty(0.)
             for  (i, initialLevel)  in  enumerate(initialLevels)
+                cs = cs + initialWeights[i] * paProperty.csScaling * 
+                          PhotoExcitation.estimateCrossSection(linesE, pEnergy, gam, initialLevel)
+                #==
                 if  length(paProperty.shells) != 0
                     # Add cross section data only if they refer to shells
                     error("bb: not yet implemented")
                 else
                     cs = cs + initialWeights[i] * paProperty.csScaling * 
                                 PhotoExcitation.estimateCrossSection(linesE, pEnergy, gam, initialLevel)
-                end 
+                end   ==#
             end 
             crossSections[p] = crossSections[p] + cs
         end

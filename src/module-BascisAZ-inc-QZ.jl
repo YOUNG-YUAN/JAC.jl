@@ -430,6 +430,91 @@ end
 
 
 """
+`Basics.tabulate(stream::IO, multiplet::Multiplet, levelNos::Array{Int64,1}; detail::Int64=0)`  
+    ... tabulates the energies from the multiplet with level numbers in levelNos into a neat format due to different 
+        criteria; nothing is returned. 
+        
+    + details = 0: print total energies, relative to immediate and relative to lowest.
+    + details = 1: print total energies
+    + details = 2: print energies to immediately lower level
+    + details = 3: print energies to lowest level
+"""
+function Basics.tabulate(stream::IO, multiplet::Multiplet, levelNos::Array{Int64,1}; detail::Int64=0)
+    ceV = Defaults.convertUnits("energy: from atomic to eV", 1.0)
+    
+    if      detail == 0
+        sb = "  Level  J Parity    Total [Hartree]           Total [eV]      " *
+             TableStrings.center(27, "Total "     * TableStrings.inUnits("energy") ) *  
+             TableStrings.center(21, "To lower "  * TableStrings.inUnits("energy") ) * 
+             TableStrings.center(21, "To lowest " * TableStrings.inUnits("energy") )
+        println(stream, "\n  Level energies:  \n\n", sb, "\n")
+        for  i = 1:length(multiplet.levels)
+            if  i in levelNos
+                lev    = multiplet.levels[i]
+                en     = lev.energy;      
+                enUser = Defaults.convertUnits("energy: from atomic", en)
+                if  i == 1        enUserLower = 0.;   enUserLowest = 0.
+                else
+                    enLower      = lev.energy - multiplet.levels[i-1].energy;    
+                    enUserLower  = Defaults.convertUnits("energy: from atomic", enLower)
+                    enLowest     = lev.energy - multiplet.levels[1].energy;    
+                    enUserLowest = Defaults.convertUnits("energy: from atomic", enLowest)
+                end
+                sc  = " " * TableStrings.level(i) * "    " * string(LevelSymmetry(lev.J, lev.parity)) * "       "
+                @printf(stream, "%s %.12e   %s %.12e   %s %.12e   %s %.9e   %s %.9e   %s", 
+                                sc[1:18], en, "  ", en * ceV, "  ", enUser, "  ", enUserLower, "  ", enUserLowest, "\n")
+            end
+        end
+
+    elseif  detail == 1
+        sb = "  Level  J Parity          Hartrees       " * "             eV                   " *  TableStrings.inUnits("energy")
+        println(stream, "\n  Eigenenergies:  \n\n", sb, "\n")
+        for  i = 1:length(multiplet.levels)
+            if  i in levelNos
+                lev = multiplet.levels[i]
+                en  = lev.energy;    enUser = Defaults.convertUnits("energy: from atomic", en)
+                sc  = " " * TableStrings.level(i) * "    " * string(LevelSymmetry(lev.J, lev.parity)) * "    "
+                @printf(stream, "%s %.15e %s %.15e %s %.15e %s", sc, en, "  ", en * ceV, "  ", enUser, "\n")
+            end
+        end
+
+    elseif  detail == 2
+        sb = "  Level  J Parity          Hartrees       " * "             eV                   " * TableStrings.inUnits("energy")  
+        println(stream, "\n  Energy of each level relative to immediately lower level:  \n\n", sb, "\n")
+        for  i = 2:length(multiplet.levels)
+            if  i in levelNos
+                lev    = multiplet.levels[i]
+                en     = lev.energy - multiplet.levels[i-1].energy;    
+                enUser = Defaults.convertUnits("energy: from atomic", en)
+                sc     = " " * TableStrings.level(i) * "    " * string(LevelSymmetry(lev.J, lev.parity)) * "    "
+                @printf(stream, "%s %.15e %s %.15e %s %.15e %s", sc, en, "  ", en * ceV, "  ", enUser, "\n")
+            end
+        end
+
+    elseif  detail == 3
+        sb = "  Level  J Parity          Hartrees       " * "             eV                   " * TableStrings.inUnits("energy")      
+        println(stream, "\n  Energy of each level relative to lowest level:  \n\n", sb, "\n")
+        for  i = 2:length(multiplet.levels)
+            if  i in levelNos
+                lev    = multiplet.levels[i]
+                en     = lev.energy - multiplet.levels[1].energy;    
+                enUser = Defaults.convertUnits("energy: from atomic", en)
+                sc     = " " * TableStrings.level(i) * "    " * string(LevelSymmetry(lev.J, lev.parity)) * "    "
+                @printf(stream, "%s %.15e %s %.15e %s %.15e %s", sc, en, "  ", en * ceV, "  ", enUser, "\n")
+            end
+        end
+    else
+        error("Unsupported keystring.")
+    end
+
+    return( nothing )  
+end
+
+
+
+
+#==
+"""
 `Basics.tabulate(stream::IO, sa::String, multiplet::Multiplet, levelNos::Array{Int64,1})`  
     ... tabulates the energies from the multiplet with level numbers in levelNos due to different criteria.
 
@@ -488,7 +573,7 @@ function Basics.tabulate(stream::IO, sa::String, multiplet::Multiplet, levelNos:
     end
 
     return( nothing )  
-end
+end   ==#
 
 
 

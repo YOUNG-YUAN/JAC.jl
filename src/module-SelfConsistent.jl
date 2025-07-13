@@ -306,6 +306,7 @@ function performSCF(configs::Array{Configuration,1}, nm::Nuclear.Model, grid::Ra
                     settings::AsfSettings; levelSymmetries::Array{LevelSymmetry,1}=LevelSymmetry[], printout::Bool=true)
     
     # Generate primitives and initialize the many-electron basis
+    Defaults.setDefaults("standard grid", grid)
     primitives = BsplinesN.generatePrimitives(grid)    
     basis      = SelfConsistent.initializeBasis(configs, nm, primitives, settings; levelSymmetries, printout)
     
