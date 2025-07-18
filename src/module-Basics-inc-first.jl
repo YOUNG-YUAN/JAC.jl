@@ -417,9 +417,9 @@ end
 
 
 """
-`Basics.subshellGrasp(sa::Stringl)`  ... returns a sh::Subshell if sa denotes a (relativistic) Subshell in Grasp-notation.
+`subshellGrasp(sa::AbstractString)`  ... returns a sh::Subshell if sa denotes a (relativistic) Subshell in Grasp-notation.
 """
-function subshellGrasp(sa::String)
+function subshellGrasp(sa::AbstractString)
         if   sa == "1s"   return( Subshell("1s_1/2")  )   
     elseif   sa == "2s"   return( Subshell("2s_1/2")  )   elseif   sa == "2p-"   return( Subshell("2p_1/2") )
     elseif   sa == "2p"   return( Subshell("2p_3/2")  ) 

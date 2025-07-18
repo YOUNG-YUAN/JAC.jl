@@ -1,5 +1,6 @@
 
 export  dummyQZ
+using FortranFiles, Dierckx
 
 """
 `Basics.read()`  ... reads in data from different files and sources.
@@ -13,9 +14,9 @@ export  dummyQZ
         is returned with all subfields specified.
 """
 function Basics.read(sa::String, filename::String)
-    if      sa == "CSF list: Grasp92"                          wa = readCslFileGrasp92(filename)
-    elseif  sa == "orbital list: Grasp92"                      wa = readOrbitalFileGrasp92(filename)
-    elseif  sa == "energies & mixing coefficients: Grasp92"    wa = readMixingFileGrasp92(filename)
+    if      sa == "CSF list: Grasp92"                          wa = Basics.readCslFileGrasp92(filename)
+    elseif  sa == "orbital list: Grasp92"                      wa = Basics.readOrbitalFileGrasp92(filename)
+    elseif  sa == "energies & mixing coefficients: Grasp18"    wa = Basics.readMixingFileGrasp18(filename)
     else    error("Unsupported keystring = $sa ")
     end
 
@@ -25,21 +26,36 @@ end
 
 """
 Basics.readCslFileGrasp92(filename::String)`  
-    ... reads in the CSF list from a Grasp92 .csl file; a basis::Basis is returned.
+    ... reads in the CSF list from a Grasp92 .csl / GRASP18 .c file; a basis::Basis is returned.
 """
 function Basics.readCslFileGrasp92(filename::String)
     coreSubshells = Subshell[];    peelSubshells =  Subshell[]
 
-    f  = open(filename)
+    #f  = open(filename)
+    ftemp = open("temp-csf.c", "w")
+
+    open(filename) do f1
+        while ! eof(f1)
+            line = readline(f1) 
+            if line != " *"  write(ftemp, line*"\n") end
+        end
+    end
+
+    close(ftemp)
+
+    f  = open("temp-csf.c")
+
     sa = readline(f);   sa[1:14] != "Core subshells"   &&   error("Not a Grasp92 .cls file.")
     sa = readline(f);   if  length(sa) > 3    go = true    else  go = false    end
     i  = -1
     while go
+        # if sa[end] != '-' sa = sa * " " end
         i = i + 1;    sh = Basics.subshellGrasp( strip(sa[5i+1:5i+5]) );    push!(coreSubshells, sh)
         if  5i + 6 >  length(sa)    break    end
     end
     sa = readline(f);   println("sa = $sa")
     sa = readline(f);   if  length(sa) > 3    go = true    else  go = false    end
+    if sa[end] != '-' sa = sa * " " end
     i  = -1
     while go
         i = i + 1;    sh = Basics.subshellGrasp( strip(sa[5i+1:5i+5]) );    push!(peelSubshells, sh)
@@ -63,13 +79,15 @@ function Basics.readCslFileGrasp92(filename::String)
     println("  ... $NoCSF CSF read in from Grasp92 file  $filename)") 
     NoElectrons = sum( csfs[1].occupation )
 
+    rm("temp-csf.c")
+
     Basis(true, NoElectrons, subshells, csfs, coreSubshells, Dict{Subshell,Radial.Orbital}() )
 end
 
 
 """
 `Basics.readOrbitalFileGrasp92(filename::String, grid.Radial.Grid)`  
-    ... reads in the orbitals list from a Grasp92 .rwf or .out file; a dictionary 
+    ... reads in the orbitals list from a Grasp92 .w file; a dictionary 
         orbitals::Dict{Subshell,Radial.Orbital} is returned.
 """
 function Basics.readOrbitalFileGrasp92(filename::String, grid::Radial.Grid)
@@ -94,11 +112,24 @@ function Basics.readOrbitalFileGrasp92(filename::String, grid::Radial.Grid)
             subshell = Subshell( Int64(n), Int64(kappa) )   
             if  energy < 0   isBound = true    else    isBound = false   end 
             useStandardGrid = true
-            println("Basics.readOrbitalFileGrasp92-aa: warning ... Radial functions still need to be interpolated upon the given grid.")
-            Px = P
-            Qx = Q 
 
-            orbitals = Base.merge( orbitals, Dict( subshell => Orbital(subshell, isBound, useStandardGrid, energy, Px, Qx, Radial.Grid() ) ))
+            itp = Dierckx.Spline1D(ra,P)
+            itq = Dierckx.Spline1D(ra,Q)
+
+            Px = zeros(length(grid.r))
+            Qx = zeros(length(grid.r))
+
+            for i in 1:length(grid.r)
+                if minimum(ra) <= grid.r[i] <= maximum(ra)
+                    Px[i] = itp(grid.r[i])
+                    Qx[i] = itq(grid.r[i])
+                else
+                    break
+                end
+            end
+
+
+            orbitals = Base.merge( orbitals, Dict( subshell => Orbital(subshell, isBound, useStandardGrid, energy, Px, Qx, Px, Qx, grid ) ))
     catch ex
         if     ex isa EOFError  break
         else   throw(ex)
@@ -108,6 +139,71 @@ function Basics.readOrbitalFileGrasp92(filename::String, grid::Radial.Grid)
     close(f)
 
     return( orbitals )
+end
+
+
+"""
+`Basics.readMixingFileGrasp18(filename::String, basis::Basis)`  
+    ... reads in the mixing coefficients from a Grasp18 .m file by using the given basis; A multiplet::Multiplet 
+        is returned.
+"""   
+function Basics.readMixingFileGrasp18(filename::String, basis::Basis)
+    
+    name =  "from GRASP18"
+
+    f = FortranFile(filename)
+        
+    if (String(Base.read(f, FString{6})) != "G92MIX")
+        close(f)
+    error("File \"", filename, "\" does not seem to be a Grasp92 MIX file")
+    end
+
+    nelec, ncftot, nw, nvectot, nvecsiz, nblock = read(f, Int32, Int32, Int32, Int32, Int32, Int32)
+
+    levels = Level[]
+    nlevel = 0
+
+    for i = 1:nblock
+        nb, ncfblk, nevblk, iatjp, iaspa = read(f, Int32, Int32, Int32, Int32, Int32)
+
+        if iaspa < 0
+            parity = Basics.Parity("-")
+        else
+            parity = Basics.Parity("+")
+        end
+
+        J = AngularJ64((iatjp-1)//2)
+        M = AngularM64( J.num//J.den )
+
+        ivecdum = read(f, (Int32, nevblk))
+        avg_energy, egval = read(f, Float64, (Float64, nevblk))
+        eigenvectors = read(f, (Float64, ncfblk, nevblk))
+
+        for blk = 1:nevblk
+            mc = zeros(ncftot)
+            for n in 1:length(basis.csfs)
+                if basis.csfs[n].J == J && basis.csfs[n].parity == parity 
+                    mc[n:(n + ncfblk - 1)] = eigenvectors[:,blk]
+                    break 
+                end
+            end
+            nlevel += 1
+            push!( levels, Level(J, M, parity, nlevel, avg_energy + egval[blk], 0., true, basis, mc) )
+        end
+
+    end
+
+    levels = sort!(levels)
+    
+    levelsSorted = []
+
+    for i = 1:length(levels)
+        push!( levelsSorted, Level(levels[i].J, levels[i].M, levels[i].parity, i,
+        levels[i].energy, 0., true, levels[i].basis, levels[i].mc) )
+    end
+
+    multiplet = Multiplet(name, levelsSorted)
+    return( multiplet )
 end
 
 
@@ -158,42 +254,20 @@ end
 
 
 """
-`Basics.readMixingFileGrasp92(filename::String, basis::Basis)`  
-    ... reads in the mixing coefficients from a Grasp92 .mix file by using the given basis; A multiplet::Multiplet 
-        is returned.
+`Basics.readFilesGrasp18(grid::Radial.Grid, fileCSF::String, fileWavefunction::String, fileMixing::String)`
+ 
+    ... reads in the GRASP18 output files `*.c`, `*.w`and `*.m`; a multiplet::Multiplet is returned.
 """
-function Basics.readMixingFileGrasp92(filename::String, basis::Basis)
-    name = "from Grasp"
-    f = FortranFile(filename)
+function Basics.readFilesGrasp18(grid::Radial.Grid, fileCSF::String, fileWavefunction::String, fileMixing::String)
 
-    if (String(Base.read(f, FString{6})) != "G92MIX")
-        close(f)
-    error("File \"", filename, "\" does not seem to be a Grasp92 MIX file")
-    end
+    basis = Basics.readCslFileGrasp92(fileCSF)
+    orbitals = Basics.readOrbitalFileGrasp92(fileWavefunction, grid)
+    isDefined = true
+    basis = Basis( isDefined, basis.NoElectrons, basis.subshells, basis.csfs, basis.coreSubshells, orbitals)
+    multiplet = Basics.readMixingFileGrasp18(fileMixing, basis)
 
-    no_electrons, no_csf, no_subshells = read(f, Int32, Int32, Int32)
-    no_asf = Base.read(f, Int32)
-    level_numbers = Base.read(f, (Int32, no_asf))
-    ijip = Base.read(f, (Int32, 2, no_asf))
-
-    mjs = ijip[1,:] # 2j+1
-    mparities = ijip[2,:] # 1=='+', -1=='-'
-
-    mixfile_to_j(i::Int32) = J((i-1)//2)
-    mixfile_to_p(i::Int32) = i==1 ?  Basics.plus : Basics.minus
-
-    js = mixfile_to_j.(mjs)
-    parities = mixfile_to_p.(mparities)
-
-    avg_energy, eval = read(f, Float64, (Float64, no_asf))
-    energies = avg_energy + eval
-    eigenvectors = read(f, (Float64, no_csf, no_asf))
-
-    close(f)
-    multiplet = Multiplet(name, Level[] )
-    return( multiplet )
+    return multiplet
 end
-
 
 
 """

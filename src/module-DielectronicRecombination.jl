@@ -21,7 +21,7 @@
 module DielectronicRecombination
 
 
-using Printf, SpecialFunctions,
+using Base.Threads, Distributed, Printf, ProgressMeter, SpecialFunctions,
         ..AngularMomentum, ..AutoIonization, ..Basics, ..Continuum, ..Defaults, ..ManyElectron, ..Nuclear, 
         ..PhotoEmission, ..Radial, ..TableStrings
 
@@ -852,21 +852,31 @@ function  computePassages(finalMultiplet::Multiplet, intermediateMultiplet::Mult
     #
     # Calculate all amplitudes and requested properties; simply copy if the captureChannels have been computed before
     # Here, the selected set of "corrections" can also be considered for each passage.
-    newPassages = DielectronicRecombination.Passage[]; 
-    for  passage in passages
-        newPassage = DielectronicRecombination.computeAmplitudesProperties(passage, finalMultiplet, nm, grid, nrContinuum, 
-                                                                           empTreatment, settings) 
-        push!( newPassages, newPassage)
-    end 
-    #== Multi-threading solution ... did not results in faster computations
-    for  i = 1:length(passages)   push!( newPassages, DielectronicRecombination.Passage() )   end 
-    Threads.@threads  for  i = 1:length(passages)
-        newPassage = DielectronicRecombination.computeAmplitudesProperties(passages[i], finalMultiplet, nm, grid, nrContinuum, 
-                                                                           empTreatment, settings) 
-        newPassages[i] = newPassage
-    end ==# 
     #
+    if Distributed.nworkers() > 1
+        # Distributed loop
+        newPassages_ = @showprogress desc="Computing Passages ..." pmap(passage -> 
+                        DielectronicRecombination.computeAmplitudesProperties(passage, finalMultiplet, nm, grid, nrContinuum, empTreatment, settings), passages)
+        newPassages = convert(Vector{DielectronicRecombination.Passage}, newPassages_)
+    else
+    # Multithreading loop
+        localPassages = [DielectronicRecombination.Passage[] for _ in 1:nthreads()]
+        @threads for  p in eachindex(passages)
+            newPassage = DielectronicRecombination.computeAmplitudesProperties(passages[p], finalMultiplet, nm, grid, nrContinuum, 
+                                                                            empTreatment, settings) 
+            push!(localPassages[threadid()], newPassage)
+        end 
+        newPassages = vcat(localPassages...)
+    end
     #
+    # Original implementation
+    # newPassages = DielectronicRecombination.Passage[]; 
+    # for  passage in passages
+    #     newPassage = DielectronicRecombination.computeAmplitudesProperties(passage, finalMultiplet, nm, grid, nrContinuum, 
+    #                                                                        empTreatment, settings) 
+    #     push!( newPassages, newPassage)
+    # end 
+
     # Add empirical passages to newPassages, if requested as correction
     if  empTreatment.doEmpiricalCorrections   &&   empTreatment.nUpperEmpirical > 0
         DielectronicRecombination.addEmpiricalPassages!(newPassages, empTreatment)      end
@@ -1001,6 +1011,8 @@ function  computeResonances(passages::Array{DielectronicRecombination.Passage,1}
             if  ps.intermediateLevel.index == passage.intermediateLevel.index   augerRate = augerRate + ps.captureRate   end   
         end
         resonanceStrength = passage.reducedStrength / (augerRate + passage.photonRate)
+        #
+        if (isequal(resonanceStrength.Babushkin, NaN) || isequal(resonanceStrength.Coulomb, NaN)) continue end
         #
         push!( resonances, DielectronicRecombination.Resonance(passage.initialLevel, passage.intermediateLevel, 
                                                                passage.electronEnergy, resonanceStrength, 

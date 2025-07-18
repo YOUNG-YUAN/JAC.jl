@@ -121,9 +121,10 @@ function performCI                                              end
 function plot                                                   end
 function read                                                   end
 function readCslFileGrasp92                                     end
+function readFilesGrasp18                                  		end
 function readOrbitalFileGrasp92                                 end
 function readMixFileRelci                                       end
-function readMixingFileGrasp92                                  end
+function readMixingFileGrasp18                                  end
 function recast                                                 end
 function selectLevel                                            end
 function selectLevelPair                                        end

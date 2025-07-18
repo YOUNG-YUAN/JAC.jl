@@ -782,23 +782,35 @@ function CsfRGrasp92(subshells::Array{Subshell,1}, coreSubshells::Array{Subshell
     scc = sc * "	  ";   scx = " "
     i  = -1;   ishell = length(coreSubshells)
     while true
-        i = i + 1;    sax = sa[9i+1:9i+9];     sbx = sb[9i+1:9i+9];    scx = strip( scc[9i+6:9i+14] )
+        i = i + 1;    
+        sax = sa[9i+1:9i+9];   
+        #println("sax : ", sax)  
+        if length(sb) < 9i+9
+            sbx = ""
+        else
+            sbx = sb[9i+1:9i+9]
+        end 
+        #println("sbx : ", sbx)  
+        scx = strip( scc[9i+6:9i+14] )
+        #println("scx : ", scx)  
 
-        sh = strip( sax[1:5] );    sh = Basics.subshellGrasp(sh);    occ = parse( sax[7:8] )
-        search(sbx, ',') > 0    &&    error("stop a: missing seniorityNr; sb = $sb")   # Include seniorityNr more properly if it occurs
-        subJx = parse( sbx )
-        if      typeof(subJx) == Void     subJ = AngularJ64(0)
+        sh = strip( sax[1:5] );    sh = Basics.subshellGrasp(sh);    occ = parse( Int64, sax[7:8] )
+        #search(sbx, ',') > 0    &&    error("stop a: missing seniorityNr; sb = $sb")   # Include seniorityNr more properly if it occurs
+        #subJx = parse( sbx )
+        subJx = parseA( sbx )
+        #println(subJx)
+        if      typeof(subJx) == Nothing     subJ = AngularJ64(0)
         elseif  typeof(subJx) == Int64    subJ = AngularJ64(subJx)
         elseif  typeof(subJx) == Expr     subJ = AngularJ64( subJx.args[2]// subJx.args[3] )
         else    error("stop b; type = $(typeof(subJx))")
         end
 
         if   length(scx) > 0  &&  scx[end:end] in ["+", "-"]    scx = scx[1:end-1]   end
-        subXx = parse( scx )
-        if      ishell == 0  &&  typeof(subXx)     == Void                                       subX = subJ
-        elseif  ishell >= 1  &&  subshellX[ishell] == AngularJ64(0)  && typeof(subXx) == Void    subX = subJ
-        elseif  ishell >= 1  &&  typeof(subXx)     == Void                                       subX = subshellX[ishell]
-        elseif  typeof(subXx) == Void                     subX = subshellX[ishell-1]
+        subXx = parseA( scx )
+        if      ishell == 0  &&  typeof(subXx)     == Nothing                                       subX = subJ
+        elseif  ishell >= 1  &&  subshellX[ishell] == AngularJ64(0)  && typeof(subXx) == Nothing    subX = subJ
+        elseif  ishell >= 1  &&  typeof(subXx)     == Nothing                                       subX = subshellX[ishell]
+        elseif  typeof(subXx) == Nothing                     subX = subshellX[ishell-1]
         elseif  typeof(subXx) == Int64                    subX = AngularJ64(subXx)
         elseif  typeof(subXx) == Expr                     subX = AngularJ64( subXx.args[2]// subXx.args[3] )
         else    error("stop c")
@@ -816,7 +828,12 @@ function CsfRGrasp92(subshells::Array{Subshell,1}, coreSubshells::Array{Subshell
             push!(occupation, occ);    push!(seniorityNr, nu);	 push!(subshellJ, subJ);    push!(subshellX, subX) 
             break
         else
-            push!(occupation, 0);      push!(seniorityNr, 0);	 push!(subshellJ, AngularJ64(0));    push!(subshellX, subshellX[ishell-1]) 
+            push!(occupation, 0);      
+            push!(seniorityNr, 0);	 
+            push!(subshellJ, AngularJ64(0));    
+            push!(subshellX, subshellX[ishell-1]) 
+            #println(subshellX, ishell)
+            #push!(subshellX, AngularJ64(0)) 
         end
         end
 
@@ -828,7 +845,10 @@ function CsfRGrasp92(subshells::Array{Subshell,1}, coreSubshells::Array{Subshell
 
     while  ishell < length(subshells)
         ishell = ishell + 1
-        push!(occupation, 0);    push!(seniorityNr, 0);	 push!(subshellJ, AngularJ64(0));    push!(subshellX, subshellX[ishell-1]) 
+        push!(occupation, 0);    
+        push!(seniorityNr, 0);	 
+        push!(subshellJ, AngularJ64(0));    
+        push!(subshellX, subshellX[ishell-1]) 
     end
 
     # Fill the remaining subshells
@@ -840,6 +860,23 @@ function CsfRGrasp92(subshells::Array{Subshell,1}, coreSubshells::Array{Subshell
     end
 
     wa = CsfR(true, J, parity, occupation, seniorityNr, subshellJ, subshellX, subshellsx)
+end
+
+
+"""
+`function parseA(x::AbstractString)`
+    ... helper function for `ManyElectron.CsfRGrasp92`
+"""
+function parseA(x::AbstractString)
+    y = strip(x)
+    if length(y) == 0 
+        return nothing
+    elseif length(y) <= 2
+        return parse(Int64, y)
+    elseif length(y) == 3
+        a = parse(Int64, y[1]); b = parse(Int64, y[3])
+        return :( $a//$b )
+    end
 end
 
 
