@@ -54,7 +54,7 @@ end
 
 """
 `LSjj.shellStateString(shell::String, occ::Int64, w::Int64, Q::AngularJ64, 
-                        L::AngularJ64, S::AngularJ64, LX::AngularJ64, SX::AngularJ64)`  
+                       L::AngularJ64, S::AngularJ64, LX::AngularJ64, SX::AngularJ64)`  
     ... to provide a string of a given shell state in the form !!To be worked out !! '[2p_1/2^occ]_(seniorityNr, J_sub), X=Xo' ... .
 """
 function shellStateString(shell::String, occ::Int64, w::Int64, Q::AngularJ64, L::AngularJ64, S::AngularJ64, LX::AngularJ64, SX::AngularJ64)
@@ -232,7 +232,8 @@ function expandLevelsIntoLS(multiplet::Multiplet, settings::ManyElectron.LSjjSet
     # Make the jj-LS expansion of all selected levels
     if  Basics.isStandardSubshellList(multiplet.levels[1].basis)
         shellList = Basics.extractNonrelativisticShellList(multiplet.levels[1].basis.subshells) 
-        confList  = Basics.extractNonrelativisticConfigurations(multiplet.levels[1].basis)
+        ##x confList  = Basics.extractNonrelativisticConfigurations(multiplet.levels[1].basis)
+        confList  = Basics.extractConfigurations(Basics.FromBasis(), multiplet.levels[1].basis)
         csfsNR    = LSjj.generateNonrelativisticCsfList(confList, shellList)
         basisNR   = BasisNR(multiplet.levels[1].basis.NoElectrons, shellList, csfsNR)
         ncsfs     = length(basisNR.csfs)
@@ -248,8 +249,10 @@ function expandLevelsIntoLS(multiplet::Multiplet, settings::ManyElectron.LSjjSet
             csfR = multiplet.levels[1].basis.csfs[r]
             # Cycle over this CSF if it has too low weight (not yet)
             # Determine the number of open shells in CsfR
-            conf       = Basics.extractNonrelativisticConfigurationFromCsfR(csfR, multiplet.levels[1].basis)
-            openShells = Basics.extractNoOpenShells(conf)
+            ##x conf       = Basics.extractNonrelativisticConfigurationFromCsfR(csfR, multiplet.levels[1].basis)
+            conf       = Basics.extractConfiguration(Basics.FromBasis(), multiplet.levels[1].basis, csfR)
+            ##x openShells = Basics.extractNoOpenShells(conf)
+            openShells = Basics.extractFromConfiguration(Basics.OpenShellNumber(),conf)
             mcCsfR     = LSjj.expandCsfRintoNonrelativisticBasis(openShells, csfR, multiplet.levels[1].basis, basisNR)
             # Cycle through all selected levels    
             for  levelR  in  multiplet.levels  
@@ -366,9 +369,11 @@ end
 function expandCsfRintoNonrelativisticBasis(openShells::ZeroOpenShell, csfR::CsfR, basisR::Basis, basisNR::BasisNR)
     if  csfR.J != AngularJ64(0)  ||   csfR.parity != Basics.plus    error("stop a")   end
     mcVector = Float64[]
-    confR     = Basics.extractNonrelativisticConfigurationFromCsfR(csfR,  basisR)
+    ##x confR     = Basics.extractNonrelativisticConfigurationFromCsfR(csfR,  basisR)
+    confR     = Basics.extractConfiguration(Basics.FromBasis(), basisR, csfR)
     for  csf in basisNR.csfs
-        confNR = LSjj.extractConfigurationFromCsfNR(csf, basisNR)   
+        ##x confNR = LSjj.extractConfigurationFromCsfNR(csf, basisNR)   
+        confNR = Basics.extractConfiguration(Basics.NonrelativisticBasis(), csf, basisNR)   
         if      confR == confNR    push!( mcVector, 1.0)
         else                       push!( mcVector, 0.0)
         end
@@ -619,6 +624,7 @@ function expandCsfRintoNonrelativisticBasis(openShells::ThreeOpenShells, csfR::C
 end
 
 
+#== August 2025, Basics.NonrelativisticBasis()
 """
 `LSjj.extractConfigurationFromCsfNR(csfNR::CsfNR, basisNR::BasisNR)`
     ... to extract the nonrelativistic configuration from the given csfNR, if this is part of basisNR.
@@ -632,7 +638,7 @@ function extractConfigurationFromCsfNR(csfNR::CsfNR, basisNR::BasisNR)
     end
     conf   = Configuration( shells, basisNR.NoElectrons)
     return( conf )
-end
+end  ==#
 
 
 """
@@ -644,7 +650,8 @@ function extractConfigurationWeightsOfLevelNR(levelNR::LevelNR)
     weights = Dict{String,Float64}()
     for  s = 1:length(levelNR.basis.csfs)
         csf  = levelNR.basis.csfs[s];    weight = abs(levelNR.mc[s])^2
-        conf = Base.string(LSjj.extractConfigurationFromCsfNR(csf, levelNR.basis))
+        ##x conf = Base.string(LSjj.extractConfigurationFromCsfNR(csf, levelNR.basis))
+        conf = Base.string( Basics.extractConfiguration(Basics.NonrelativisticBasis(), csf, levelNR.basis) )
         if      haskey(weights, conf)    weights[conf] = weights[conf] + weight
         else    weights = Base.merge( weights, Dict( conf => weight))
         end
@@ -687,7 +694,8 @@ function generateNonrelativisticCsfList(confList::Array{Configuration,1}, shellL
 
     # Cycle through all configurations 
     for conf  in  confList
-        first = true;    parity  = Basics.determineParity(conf)
+        ##x first = true;    parity  = Basics.determineParity(conf)
+        first = true;    parity  = Basics.extractFromConfiguration(Basics.GetParity(), conf)
         for  shell  in shellList
             if   shell  in  keys(conf.shells)    occ = conf.shells[shell]    else    occ = 0    end
             if   first

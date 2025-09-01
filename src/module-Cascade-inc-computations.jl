@@ -12,10 +12,10 @@ end
 
     
 """
-`Basics.extractLeadingConfiguration(cLevel::Cascade.Level)`  
+`Basics.extractConfiguration(theme::Basics.LeadingConfiguration, cLevel::Cascade.Level)`  
     ... extract the leading configuration of the given level; a conf::Configuration is returned.
 """
-function Basics.extractLeadingConfiguration(cLevel::Cascade.Level)
+function Basics.extractConfiguration(theme::Basics.LeadingConfiguration, cLevel::Cascade.Level)
     # First extract the right ManyElectron.Level that is to be analyzed
     level = Level()
     if length(cLevel.parents) > 0   
@@ -34,11 +34,13 @@ function Basics.extractLeadingConfiguration(cLevel::Cascade.Level)
     else        error("stop c")
     end
 
-    allConfs = Basics.extractNonrelativisticConfigurations(level.basis)
+    ##x allConfs = Basics.extractNonrelativisticConfigurations(level.basis)
+    allConfs = Basics.extractConfigurations(Basics.FromBasis(), level.basis)
     weights  = zeros(length(allConfs))
     for  (ia, allConf) in  enumerate(allConfs)
         for (ic, csf) in enumerate(level.basis.csfs)
-            if  allConf == Basics.extractNonrelativisticConfigurationFromCsfR(csf, level.basis)     
+            ##x if  allConf == Basics.extractNonrelativisticConfigurationFromCsfR(csf, level.basis)     
+            if  allConf == Basics.extractConfiguration(Basics.FromBasis(), level.basis, csf)     
                 weights[ia] = weights[ia] + level.mc[ic]
             end
         end
@@ -115,8 +117,10 @@ function computeDecayProbabilities(outcome::DecayYield.Outcome, linesR::Array{Ph
     #
     # Determine the leading configuration and shells of the initial level
     subshList     = Basics.extractRelativisticSubshellList(outcome.level)
-    relConfigs    = Basics.extractRelativisticConfigurations(outcome.level.basis, outcome.level.J)
-    holeSubshells = Basics.extractOpenSubshells(relConfigs[1]);   holeSubshell = holeSubshells[1]
+    ##x relConfigs    = Basics.extractRelativisticConfigurations(outcome.level.basis, outcome.level.J)
+    relConfigs    = Basics.extractConfigurations(Basics.RelativisticConfigurations(), outcome.level.basis, outcome.level.J)
+    ##x holeSubshells = Basics.extractOpenSubshells(relConfigs[1]);   holeSubshell = holeSubshells[1]
+    holeSubshells = Basics.extractFromConfiguration(Basics.OpenSubshells(), relConfigs[1]);   holeSubshell = holeSubshells[1]
     #
     # Initialize and fill dictionaries for collecting the radiative and Auger rates
     level = outcome.level;    sym = LevelSymmetry(level.J, level.parity)
@@ -151,9 +155,12 @@ function computeDecayProbabilities(outcome::DecayYield.Outcome, linesR::Array{Ph
         if  similarKey == LevelKey( LevelSymmetry(line.initialLevel.J, line.initialLevel.parity), line.initialLevel.index, line.initialLevel.energy, 0.)
             rateR = rateR + line.photonRate;   NoPhotonLines = NoPhotonLines + 1  
             # Extract the subshells that make the difference between the initial and final levels; terminate if NO 1s_1/2 occurs
-            confi = Basics.extractLeadingConfigurationR(line.initialLevel)
-            conff = Basics.extractLeadingConfigurationR(line.finalLevel)
-            occDiffs = Basics.extractShellOccupationDifference(confi, conff);   subshList = Subshell[]
+            ##x confi = Basics.extractLeadingConfigurationR(line.initialLevel)
+            ##x conff = Basics.extractLeadingConfigurationR(line.finalLevel)
+            confi = Basics.extractConfiguration(Basics.LeadingConfigurationR(), line.initialLevel)
+            conff = Basics.extractConfiguration(Basics.LeadingConfigurationR(), line.finalLevel)
+            ##x occDiffs = Basics.extractShellOccupationDifference(confi, conff);   subshList = Subshell[]
+            occDiffs = Basics.extractFromConfigurations(Basics.OccupationDifference(), confi, conff);   subshList = Subshell[]
             for  diff in occDiffs
                 # holeSubshell must differ by -1
                 if diff[1] == holeSubshell
@@ -173,9 +180,12 @@ function computeDecayProbabilities(outcome::DecayYield.Outcome, linesR::Array{Ph
         if  similarKey == LevelKey( LevelSymmetry(line.initialLevel.J, line.initialLevel.parity), line.initialLevel.index, line.initialLevel.energy, 0.)
             rateA = rateA + line.totalRate;   NoAugerLines = NoAugerLines + 1    
             # Extract the subshells that make the difference between the initial and final levels; terminate if NO 1s_1/2 occurs
-            confi = Basics.extractLeadingConfigurationR(line.initialLevel)
-            conff = Basics.extractLeadingConfigurationR(line.finalLevel)
-            occDiffs = Basics.extractShellOccupationDifference(confi, conff);   subshList = Subshell[]
+            ##x confi = Basics.extractLeadingConfigurationR(line.initialLevel)
+            ##x conff = Basics.extractLeadingConfigurationR(line.finalLevel)
+            confi = Basics.extractConfiguration(Basics.LeadingConfigurationR(), line.initialLevel)
+            conff = Basics.extractConfiguration(Basics.LeadingConfigurationR(), line.finalLevel)
+            ##x occDiffs = Basics.extractShellOccupationDifference(confi, conff);   subshList = Subshell[]
+            occDiffs = Basics.extractFromConfigurations(Basics.OccupationDifference(), confi, conff);   subshList = Subshell[]
             for  diff in occDiffs
                 # holeSubshell must differ by -1
                 if diff[1] == holeSubshell
@@ -333,8 +343,10 @@ function displayDecayProbabilities(stream::IO, outcome::DecayYield.Outcome, rPro
     #
     # Determine the leading configuration and shells of the initial level
     subshList     = Basics.extractRelativisticSubshellList(outcome.level)
-    relConfigs    = Basics.extractRelativisticConfigurations(outcome.level.basis, outcome.level.J)
-    holeSubshells = Basics.extractOpenSubshells(relConfigs[1]);   holeSubshell = holeSubshells[1]
+    ##x relConfigs    = Basics.extractRelativisticConfigurations(outcome.level.basis, outcome.level.J)
+    relConfigs    = Basics.extractConfigurations(Basics.RelativisticConfigurations(), outcome.level.basis, outcome.level.J)
+    ##x holeSubshells = Basics.extractOpenSubshells(relConfigs[1]);   holeSubshell = holeSubshells[1]
+    holeSubshells = Basics.extractFromConfiguration(Basics.OpenSubshells(), relConfigs[1]);   holeSubshell = holeSubshells[1]
     @show subshList, relConfigs, holeSubshell
     
     nx = 28
@@ -454,8 +466,10 @@ function dumpDecayProbabilities(stream::IO, outcome::DecayYield.Outcome, subshEn
     #
     # Determine the leading configuration and shells of the initial level
     subshList     = Basics.extractRelativisticSubshellList(outcome.level)
-    relConfigs    = Basics.extractRelativisticConfigurations(outcome.level.basis, outcome.level.J)
-    holeSubshells = Basics.extractOpenSubshells(relConfigs[1]);   holeSubshell = holeSubshells[1]
+    ##x relConfigs    = Basics.extractRelativisticConfigurations(outcome.level.basis, outcome.level.J)
+    relConfigs    = Basics.extractConfigurations(Basics.RelativisticConfigurations(), outcome.level.basis, outcome.level.J)
+    ##x holeSubshells = Basics.extractOpenSubshells(relConfigs[1]);   holeSubshell = holeSubshells[1]
+    holeSubshells = Basics.extractFromConfiguration(Basics.OpenSubshells(), relConfigs[1]);   holeSubshell = holeSubshells[1]
     
     # Dump probabilities for the given holeSubshell to the data file
     idx = Cascade.dumpGeant4Index(holeSubshell)
@@ -492,8 +506,10 @@ function dumpDecayProbabilities(stream::IO, outcome::DecayYield.Outcome, subshEn
     #
     # Determine the leading configuration and shells of the initial level
     subshList     = Basics.extractRelativisticSubshellList(outcome.level)
-    relConfigs    = Basics.extractRelativisticConfigurations(outcome.level.basis, outcome.level.J)
-    holeSubshells = Basics.extractOpenSubshells(relConfigs[1]);   holeSubshell = holeSubshells[1]
+    ##x relConfigs    = Basics.extractRelativisticConfigurations(outcome.level.basis, outcome.level.J)
+    relConfigs    = Basics.extractConfigurations(Basics.RelativisticConfigurations(), outcome.level.basis, outcome.level.J)
+    ##x holeSubshells = Basics.extractOpenSubshells(relConfigs[1]);   holeSubshell = holeSubshells[1]
+    holeSubshells = Basics.extractFromConfiguration(Basics.OpenSubshells(), relConfigs[1]);   holeSubshell = holeSubshells[1]
     
     # Dump probabilities for the given holeSubshell to the data file
     idx = Cascade.dumpGeant4Index(holeSubshell)
@@ -529,8 +545,9 @@ function displayLevels(stream::IO, multiplets::Array{Multiplet,1}; sa::String=""
     println(stream, "* Configurations and levels for all given " * sa * "multiplets of the cascade, relative to the lowest:")
     for  multiplet  in multiplets
         println(stream, "  ")
-        confList = Basics.extractNonrelativisticConfigurations(multiplet.levels[1].basis)
-        for  conf in confList
+        ##x confList = Basics.extractNonrelativisticConfigurations(multiplet.levels[1].basis)
+        confList = Basics.extractConfigurations(Basics.FromBasis(), multiplet.levels[1].basis)
+         for  conf in confList
             println(stream, "  $conf")
         end
         println(stream, "  ", TableStrings.hLine(nx))
@@ -692,7 +709,8 @@ function generateConfigurationList(multiplets::Array{Multiplet,1}, further::Int6
     # Determine all (different) configurations from multiplets
     confList = Configuration[]
     for mp  in  multiplets   
-        cfList = Basics.extractNonrelativisticConfigurations(mp.levels[1].basis)
+        ##x cfList = Basics.extractNonrelativisticConfigurations(mp.levels[1].basis)
+        cfList = Basics.extractConfigurations(Basics.FromBasis(), mp.levels[1].basis)
         for  cf in cfList   if  cf in confList   nothing   else   push!(confList, cf)      end      end
     end
     cList = copy(confList);   initialNoElectrons = multiplets[1].levels[1].basis.NoElectrons
@@ -700,11 +718,13 @@ function generateConfigurationList(multiplets::Array{Multiplet,1}, further::Int6
     for  fur = 1:further+1
         newConfList = Configuration[]
         for conf  in cList
-            holeList = Basics.determineHoleShells(conf)
-            for  holeShell in holeList
-                wa = generateConfigurationsWith1OuterHole(conf,  holeShell);   append!(newConfList, wa)
-                wa = generateConfigurationsWith2OuterHoles(conf, holeShell);   append!(newConfList, wa)
-            end
+            ##x holeList = Basics.determineHoleShells(conf)
+            ##x for  holeShell in holeList
+            ##x     wa = generateConfigurationsWith1OuterHole(conf,  holeShell);   append!(newConfList, wa)
+            ##x     wa = generateConfigurationsWith2OuterHoles(conf, holeShell);   append!(newConfList, wa)
+            ##x end
+            wa = Basics.generateConfigurations(Basics.ForPhotoEmission(), [conf]);   append!(newConfList, wa)
+            wa = Basics.generateConfigurations(Basics.ForAutoIonization(), [conf]);  append!(newConfList, wa)
         end
         newConfList = unique(newConfList)
         cList = newConfList
@@ -721,6 +741,7 @@ function generateConfigurationList(multiplets::Array{Multiplet,1}, further::Int6
 end
 
 
+#== August 2025, just moved
 """
 `Cascade.generateConfigurationsWith1OuterHole(conf,  holeShell)`  
     ... generates all possible (decay) configurations where the hole in holeShell is moved 'outwards'. 
@@ -748,9 +769,10 @@ function generateConfigurationsWith1OuterHole(conf::Configuration,  holeShell::S
     end
 
     return( confList )
-end
+end  ==#
 
 
+#== August 2025, just moved
 """
 `Cascade.generateConfigurationsWith1OuterHole(configs::Array{Configuration,1},  holeShells::Array{Shell,1})`  
     ... generates all possible (decay) configurations where one hole from holeShells is moved 'outwards'. 
@@ -766,7 +788,7 @@ function generateConfigurationsWith1OuterHole(configs::Array{Configuration,1},  
     end
     nconfList = unique(nconfList)
     return(nconfList)
-end
+end  ==#
 
 
 #==
@@ -811,6 +833,8 @@ function generateConfigurationsWith2OuterHoles(conf::Configuration,  holeShell::
 end                          ==#
 
 
+
+#== August 2025, generateConfigurations(ForAutoionization(), ...)
 """
 `Cascade.generateConfigurationsWith2OuterHoles(conf,  holeShell)`  
     ... generates all possible (decay) configurations where the hole in holeShell is moved 'outwards'. 
@@ -846,9 +870,10 @@ function generateConfigurationsWith2OuterHoles(conf::Configuration,  holeShell::
     #
 
     return( confList )
-end
+end  ==#
 
 
+#== August 2025, generateConfigurations(ForAutoionization(), ...)
 """
 `Cascade.generateConfigurationsWith2OuterHoles(configs::Array{Configuration,1},  holeShells::Array{Shell,1})`  
     ... generates all possible (decay) configurations where two holes from holeShells are moved 'outwards'. 
@@ -864,10 +889,10 @@ function generateConfigurationsWith2OuterHoles(configs::Array{Configuration,1}, 
     end
     nconfList = unique(nconfList)
     return(nconfList)
-end
+end  ==#
 
 
-
+#== August 2025, renamed ... and moved into ...-inc-configurations.jl
 """
 `Cascade.groupDisplayConfigurationList(Z::Float64, confs::Array{Configuration,1}; sa::String="")` 
     ... group & display the configuration list into sublists with the same No. of electrons; this lists are displayed together 
@@ -918,7 +943,7 @@ function groupDisplayConfigurationList(Z::Float64, confs::Array{Configuration,1}
     if  printSummary   println(iostream, "\n* A total of $nc configuration have been defined for this cascade, and selected " *
                                             "configurations could be removed here:  [currently not supported]")      end
     return( confList )
-end
+end  ==#
 
 
 """

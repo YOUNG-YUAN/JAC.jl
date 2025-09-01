@@ -89,7 +89,8 @@ function generateBlocks(scheme::Cascade.ExpansionOpacityScheme, comp::Cascade.Co
             # Determine a list of hydrogenic orbitals for later use 
             relconfList = ConfigurationR[]
             for  confa in confs
-                wa = Basics.generateConfigurationRs(confa)
+                ##x wa = Basics.generateConfigurationRs(confa)
+                wa = Basics.generateConfigurations(Basics.RelativisticConfigurations(), confa)
                 append!( relconfList, wa)
             end
             subshellList = Basics.generateSubshellList(relconfList)
@@ -109,7 +110,10 @@ function generateBlocks(scheme::Cascade.ExpansionOpacityScheme, comp::Cascade.Co
             else
                 # Generate a list of relativistic configurations and determine an ordered list of subshells for these configurations
                 relconfList  = ConfigurationR[]
-                wa           = Basics.generateConfigurationRs(confa);    append!( relconfList, wa)
+                #
+                ##x wa           = Basics.generateConfigurationRs(confa)
+                wa           = Basics.generateConfigurations(Basics.RelativisticConfigurations(), confa)
+                append!( relconfList, wa)
                 subshellList = Basics.generateSubshellList(relconfList)
                 Defaults.setDefaults("relativistic subshell list", subshellList; printout=false)
                 # Generate the relativistic CSF's for the given subshell list
@@ -214,7 +218,8 @@ function perform(scheme::ExpansionOpacityScheme, comp::Cascade.Computation; outp
     #
     # Generate subsequent cascade configurations as well as display and group them together
     wa  = Cascade.generateConfigurationsForExpansionOpacity(comp.initialConfigs, comp.scheme, comp.nuclearModel, comp.grid)
-    wb  = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa, sa="excited configurations of the expansion opacity ")
+    ##x wb  = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa, sa="excited configurations of the expansion opacity ")
+    wb  = Basics.displayConfigurations(comp.nuclearModel.Z, wa, sa="excited configurations of the expansion opacity ")
     #
     # Determine first all configuration 'blocks' and from them the individual steps of the cascade
     wc  = Cascade.generateBlocks(scheme, comp::Cascade.Computation, wb)

@@ -472,6 +472,7 @@ function subshell_2j(sh::Subshell)
 end
 
 
+#== August 2025, just moved
 """
 `Basics.subshellsFromClosedShellConfiguration("[Ne]")`  
     ... to provide a list of (relativistic) subshells for the given closed-shell configuration.
@@ -497,7 +498,7 @@ function subshellsFromClosedShellConfiguration(sa::String)
     end
     
     return( wa )
-end
+end  ==#
 
 #################################################################################################################################
 #################################################################################################################################
@@ -612,5 +613,263 @@ function Base.string(cp::CorePolarization)
     sa = sa * "core-polarization with alpha_c = $(cp.coreAlpha) a.u., r_c = $(cp.coreRadius) a.u. " *
                 "core shells = $(cp.coreShells)."
     return( sa )
+end
+
+
+#################################################################################################################################
+#################################################################################################################################
+
+"""
+`struct  Basics.Configuration`  
+    ... defines a struct for a non-relativistic electron configuration that is fully speficied by its shell notations 
+        (such as "1s", "2s", "2p", ....) and the corresponding occupation numbers (>= 0). An electron configuration 
+        is independent of any order of the shells, and a zero occupation is assumed for all shells that do not appear as a 
+        key in the shell (dictionary). Therefore, the number of keys do not allow any conclusion about the underlying orbital 
+        space of any considered computation that include more than just a single configuration.
+
+    + shells         ::Dict{Shell,Int64}   ... Dictionary that maps shells to their occupation.
+    + NoElectrons    ::Int64               ... No. of electrons.
+"""
+struct  Configuration
+    shells           ::Dict{Shell,Int64}  
+    NoElectrons      ::Int64               
+end
+
+export  Configuration 
+
+
+"""
+`Basics.Configuration(NoElectrons::Int64)`  
+    ... constructor for a given number of electrons which are just "filled" according to the standard order of
+        the shells and subshells. A conf::Configuration is returned.
+"""
+function Configuration(NoElectrons::Int64)
+    shellDict = Dict{Shell,Int64}();  N = NoElectrons
+    shellList = Basics.generateShellList(1, 8, 7)
+    for  sh in shellList
+        maxocc = 2 * (2*sh.l + 1);    occ    = min(maxocc, N);    shellDict[sh] = occ
+        N      = N - occ;             if  N == 0   break   end
+    end
+    
+    return ( Configuration(shellDict, NoElectrons) )
+end
+
+
+"""
+`Basics.Configuration(sa::String)`  
+    ... constructor for a given configuration string, such as "[He]", "[Ne]", "[Ne] 3s 3p^6"  or "1s 2p^6 3s^2 3p".
+        One can also use "1s^0" to represent a (bare-ion) empty configuration.
+"""
+function Configuration(sa::String)
+    sax = strip(sa)
+    shellOccList = split(sax, " ")
+    ##x println("shellOccList = $shellOccList")
+    NoElectrons = 0;    shellDict    = Dict{Shell,Int64}()
+    for shocc in shellOccList
+        if       shocc == " "    continue
+        elseif   shocc  in [ "[He]", "[Ne]", "[Ar]", "[Kr]", "[Pd]", "[Xe]", "[Er]", "[Pt]", "[Hg]", "[Rn]", "[Fm]" ]
+            shellDict = Base.merge( shellDict, Dict( Shell("1s") => 2));                                       NoElectrons = NoElectrons + 2
+            shocc == "[He]"  &&  continue
+            shellDict = Base.merge( shellDict, Dict(Shell("2s") => 2,  Shell("2p") => 6));                     NoElectrons = NoElectrons + 8  
+            shocc == "[Ne]"  &&  continue
+            shellDict = Base.merge( shellDict, Dict(Shell("3s") => 2,  Shell("3p") => 6));                     NoElectrons = NoElectrons + 8  
+            shocc == "[Ar]"  &&  continue 
+            shellDict = Base.merge( shellDict, Dict(Shell("3d") => 10, Shell("4s") => 2, Shell("4p") => 6));   NoElectrons = NoElectrons + 18   
+            shocc == "[Kr]"  &&  continue   
+            shellDict = Base.merge( shellDict, Dict(Shell("4d") => 10));                                       NoElectrons = NoElectrons + 10  
+            shocc == "[Pd]"  &&  continue 
+            shellDict = Base.merge( shellDict, Dict(Shell("5s") => 2, Shell("5p") => 6));                      NoElectrons = NoElectrons + 8  
+            shocc == "[Xe]"  &&  continue 
+            shellDict = Base.merge( shellDict, Dict(Shell("4f") => 14));                                       NoElectrons = NoElectrons + 14  
+            shocc == "[Er]"  &&  continue 
+            shellDict = Base.merge( shellDict, Dict(Shell("5d") => 10));                                       NoElectrons = NoElectrons + 10  
+            shocc == "[Pt]"  &&  continue 
+            shellDict = Base.merge( shellDict, Dict(Shell("6s") => 2));                                        NoElectrons = NoElectrons + 2  
+            shocc == "[Hg]"  &&  continue 
+            shellDict = Base.merge( shellDict, Dict(Shell("6p") => 6));                                        NoElectrons = NoElectrons + 6  
+            shocc == "[Rn]"  &&  continue 
+            shellDict = Base.merge( shellDict, Dict(Shell("5f") => 14));                                       NoElectrons = NoElectrons + 14  
+            shocc == "[Fm]"  &&  continue 
+        else
+            ia = findall(in("^"), shocc);    
+            if     length(ia) == 0     shellDict = Base.merge( shellDict, Dict( Shell(shocc) => 1));           NoElectrons = NoElectrons + 1
+            else   occ = parse(Int64, shocc[ia[1]+1:end] );    sh = Shell( shocc[1:ia[1]-1] )
+                    shellDict = Base.merge( shellDict, Dict( sh => occ));                                       NoElectrons = NoElectrons + occ
+            end
+        end
+    end
+    return( Configuration(shellDict, NoElectrons) )
+end
+
+
+# `Base.show(io::IO, conf::Configuration)`  ... prepares a proper printout of the non-relativistic configuration conf::Configuration.
+function Base.show(io::IO, conf::Configuration)
+    sa = "Configuration: " * string(conf)
+    print(io, sa)
+end
+
+
+# `Base.unique(confs::Array{Configuration,1})`  ... return a unique list of configurations.
+function Base.unique(confs::Array{Configuration,1})
+    confList       = Configuration[]  
+    configurations = deepcopy(confs)
+    for  confa in configurations
+        addTo = true
+        for confb in confList    if   confa == confb    addTo = false;    break     end     end
+        if  addTo    push!(confList, confa)     end
+    end
+
+    return( confList )
+end
+
+
+# `Base.string(conf::Configuration)`  ... provides a String notation for the variable conf::Configuration.
+function Base.string(conf::Configuration)
+    wa = keys(conf.shells);   va = values(conf.shells)
+    shells = Shell[];   for  k in wa    push!(shells, k)        end
+    sortedShells = Base.sort( shells , lt=Base.isless)
+
+    sa = ""
+    for  k  in sortedShells 
+        occ = conf.shells[k]
+        sa  = sa * string(k) * "^$occ "
+    end
+
+    return( sa )
+end
+
+
+"""
+`Base.string(conf::Configuration, open::Bool)`  
+    ... provides, if open=trueM a String notation for the open-shell part of variable conf::Configuration,
+        and the standard printout for open=false.
+"""
+function Base.string(conf::Configuration, open::Bool)
+    if    false   sa = Base.string(conf)
+    else
+        # Define a new configurations with shells "beyond" the closed core
+        openShell = Shell(100,99)
+        for  (shell,occ)  in conf.shells
+            if  occ <  2*(2*shell.l + 1)  &&  shell < openShell    openShell = shell   end 
+        end
+        #
+        NoElectrons = 0;       newShells  = Dict{Shell,Int64}()
+        CoreElectrons = 0;     coreShells = Dict{Shell,Int64}()
+        for  (shell,occ)  in conf.shells
+            if    shell >= openShell    newShells[shell]  = occ;    NoElectrons = NoElectrons + occ   
+            else                        coreShells[shell] = occ;    CoreElectrons = CoreElectrons + occ 
+            end 
+        end
+        newConf  = Configuration(newShells, NoElectrons)
+        coreConf = Configuration(coreShells, CoreElectrons)
+        if      coreConf == Configuration("[He]")                   sb = "[He] "
+        elseif  coreConf == Configuration("[He] 2s^2")              sb = "[Be] "
+        elseif  coreConf == Configuration("[Ne]")                   sb = "[Ne] "
+        elseif  coreConf == Configuration("[Ne] 3s^2")              sb = "[Mg] "
+        elseif  coreConf == Configuration("[Ar]")                   sb = "[Ar] "
+        elseif  coreConf == Configuration("[Ar] 4s^2")              sb = "[Ca] "
+        elseif  coreConf == Configuration("[Ar] 3d^10")             sb = "[Ni-like] "
+        elseif  coreConf == Configuration("[Ar] 3d^10 4s^2")        sb = "[Zn-like] "
+        elseif  coreConf == Configuration("[Kr]")                   sb = "[Kr] "
+        elseif  coreConf == Configuration("[Kr] 5s^2")              sb = "[Sr] "
+        elseif  coreConf == Configuration("[Kr] 4d^10")             sb = "[Pd-like] "
+        elseif  coreConf == Configuration("[Kr] 4d^10 5s^2")        sb = "[Cd-like] "
+        elseif  coreConf == Configuration("[Kr] 4d^10 4f^14")       sb = "[Nd-like] "
+        elseif  coreConf == Configuration("[Kr] 4d^10 4f^14 5s^2")  sb = "[Sm-like] "
+        elseif  coreConf == Configuration("[Xe]")                   sb = "[Xe] "
+        elseif  coreConf == Configuration("[Xe] 6s^2")              sb = "[Ba] "
+        elseif  coreConf == Configuration("[Xe] 5d^10")             sb = "[Gd-like] "
+        elseif  coreConf == Configuration("[Xe] 4f^14")             sb = "[Er-like] "
+        elseif  coreConf == Configuration("[Xe] 5d^10 6s^2")        sb = "[Dy-like] "
+        elseif  coreConf == Configuration("[Xe] 4f^14 5d^10")       sb = "[Pt-like] "
+        elseif  coreConf == Configuration("[Hg]")                   sb = "[Hg] "
+        else                                                        sb = "[Core] "
+        end 
+        #
+        sa = sb * Base.string(newConf)
+    end
+
+    return( sa )
+end
+
+
+"""
+`Base.:(==)(confa::Configuration, confb::Configuration)`  
+    ... compares (recursively) two non-relativistic configurations and return true if all subfields are equal, 
+        and false otherwise
+"""
+function  Base.:(==)(confa::Configuration, confb::Configuration)
+    if   confa.NoElectrons  != confb.NoElectrons    return( false )    end
+    allShells = Base.merge(confa.shells, confb.shells)
+    wk        = keys(allShells)
+    ##x @show confa, confb, wk
+    for  k in wk
+        if  haskey(confa.shells, k)   &&   haskey(confb.shells, k)  &&   
+                                            confa.shells[k] != confb.shells[k]     return( false )    end
+        if  !haskey(confa.shells, k)  &&   confb.shells[k] != 0                   return( false )    end
+        if  !haskey(confb.shells, k)  &&   confa.shells[k] != 0                   return( false )    end
+    end
+    return( true )
+end
+
+
+#################################################################################################################################
+#################################################################################################################################
+
+
+"""
+`struct  Basics.ConfigurationR`  
+    ... defines a type for a relativistic electron configuration that is fully speficied by its subshell notations 
+        (such as "1s_1/2", "2s_1/2", "2p_3/2", ....) and the corresponding occupation numbers (>= 0). An electron 
+        configuration is independent of any order of the subshells, and a zero occupation is assumed for all shells that 
+        do not appears as a key. Therefore, the number of keys do not allow any conclusion about the underlying orbital 
+        space of any considered computation that include more than a single configuration.
+
+    + subshells      ::Dict{Subshell,Int64}  ... Dictionary that maps subshells to their occupation.
+    + NoElectrons    ::Int64                 ... No. of electrons.
+"""
+struct  ConfigurationR
+    subshells        ::Dict{Subshell,Int64}  
+    NoElectrons      ::Int64               
+end
+
+export  ConfigurationR 
+
+# `Base.show(io::IO, conf::ConfigurationR)`  ... prepares a proper printout of the relativistic configuration conf::ConfigurationR.
+function Base.show(io::IO, conf::ConfigurationR)
+    sa = "Configuration: " * string(conf)
+    print(io, sa)
+end
+
+
+# `Base.string(conf::ConfigurationR)`  ... provides a String notation for the variable conf::ConfigurationR.
+function Base.string(conf::ConfigurationR)
+    wa = keys(conf.subshells);   va = values(conf.subshells)
+    ##x wb = Defaults.getDefaults("ordered subshell list: relativistic", 7)
+    subshells = Subshell[];   for  k in wa    push!(subshells, k)    end
+    sortedSubshells = Base.sort( subshells , lt=Base.isless)
+
+    sa = ""
+    for  k  in sortedSubshells 
+        occ = conf.subshells[k]
+        sa  = sa * string(k) * "^$occ "
+    end
+
+    return( sa )
+end
+
+
+"""
+`Base.:(==)(confa::ConfigurationR, confb::ConfigurationR)`  
+    ... compares (recursively) two relativistic configurations and return true if all subfields are equal, 
+        and false otherwise
+"""
+function  Base.:(==)(confa::ConfigurationR, confb::ConfigurationR)
+    if   confa.NoElectrons  != confb.NoElectrons    return( false )    end
+    wk = keys(confa.subshells)
+    for  k in wk
+        if  !haskey(confb.subshells, k)  ||   confa.subshells[k] != confb.subshells[k]    return( false )    end
+    end
+    return( true )
 end
 

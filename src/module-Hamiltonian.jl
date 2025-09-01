@@ -124,7 +124,8 @@ function performCIwithFrozenOrbitals(configs::Array{Configuration,1}, frozenOrbi
     # Generate a list of relativistic configurations and determine an ordered list of subshells for these configurations
     relconfList = ConfigurationR[]
     for  conf in configs
-        wa = Basics.generateConfigurationRs(conf)
+        ##x wa = Basics.generateConfigurationRs(conf)
+        wa = Basics.generateConfigurations(Basics.RelativisticConfigurations(), conf)
         append!( relconfList, wa)
     end
     if  printout    for  i = 1:length(relconfList)    println(">> include ", relconfList[i])    end   end

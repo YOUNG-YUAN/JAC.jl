@@ -327,6 +327,7 @@ end
 
 
 
+#==  August 2025, replaced by Basics.GetParity() ...
 """
 `Basics.determineParity(conf::Configuration)`  ... to determine the parity of a given non-relativistic configuration.
 """
@@ -362,7 +363,7 @@ function Basics.determineParity(conf::ConfigurationR)
     elseif   par == -1   return( Basics.minus )
     else     error("stop b")
     end  
-end
+end ==#
 
 
 """
@@ -603,7 +604,7 @@ function Basics.display(sa::String)
 end
 
 
-
+#== August 2025, Basics.displayConfigurations
 """
 `Basics.display(stream::IO, configs::Array{Configuration,1})`  
     ... displays the generated list of configurations in a compact form; nothing is returned in this case.
@@ -621,7 +622,7 @@ function  Basics.display(stream::IO, configs::Array{Configuration,1})
     println("  ", TableStrings.hLine(nx))
     
     return( nothing )
-end
+end  ==#
 
 
 
@@ -724,7 +725,8 @@ function Basics.displayLevels(stream::IO, multiplets::Array{Multiplet,1}; N::Int
     for  (n, level)  in  enumerate(sortedLevels)
         if  n > N   break   end
         mc2  = level.mc .* level.mc;   index = findmax(mc2)[2]
-        conf = Basics.extractNonrelativisticConfigurationFromCsfR(level.basis.csfs[index],  level.basis)
+        ##x conf = Basics.extractNonrelativisticConfigurationFromCsfR(level.basis.csfs[index],  level.basis)
+        conf = Basics.extractConfiguration(Basics.FromBasis(), level.basis, level.basis.csfs[index])
         #
         sa   = TableStrings.flushright(12, string(LevelSymmetry(level.J, level.parity)))  * 
                 TableStrings.flushright(12, string(conf.NoElectrons))                      * 
@@ -774,7 +776,8 @@ function Basics.displayMeanEnergies(stream::IO, multiplets::Array{Multiplet,1}; 
     leadingConfigs = Configuration[]
     for  (n, level)  in  enumerate(sortedLevels)
         mc2  = level.mc .* level.mc;   index = findmax(mc2)[2]
-        conf = Basics.extractNonrelativisticConfigurationFromCsfR(level.basis.csfs[index],  level.basis)
+        ##x conf = Basics.extractNonrelativisticConfigurationFromCsfR(level.basis.csfs[index],  level.basis)
+        conf = Basics.extractConfiguration(Basics.FromBasis(), level.basis, level.basis.csfs[index])
         push!(leadingConfigs, conf)
     end
     #
@@ -806,8 +809,8 @@ function Basics.displayMeanEnergies(stream::IO, multiplets::Array{Multiplet,1}; 
         #
         sa = " " * 
         TableStrings.flushright( 8, string(nconf.NoElectrons)) * "   " *
-        TableStrings.flushright( 2, string( Basics.determineParity(nconf))) * "   " *
-        TableStrings.flushright(12, @sprintf("%.5e", Defaults.convertUnits("energy: from atomic", meanEnergies[n] - energy0))) * "   "  *
+        TableStrings.flushright( 2, string( Basics.extractFromConfiguration(Basics.GetParity(), nconf) ))                      * "   " *
+        TableStrings.flushright(12, @sprintf("%.5e", Defaults.convertUnits("energy: from atomic", meanEnergies[n] - energy0))) * "   " *
         TableStrings.flushright(12, @sprintf("%.5e", Defaults.convertUnits("energy: from atomic", minEnergies[n]  - energy0))) * " ... " *
         TableStrings.flushright(12, @sprintf("%.5e", Defaults.convertUnits("energy: from atomic", maxEnergies[n]  - energy0))) * "  " *
         TableStrings.flushright( 8, string( noLevels[n] )) * "      " *  
@@ -819,7 +822,7 @@ function Basics.displayMeanEnergies(stream::IO, multiplets::Array{Multiplet,1}; 
     return( nothing )
 end
 
-
+#== August 2025, Basics.displayConfigurations
 """
 `Basics.displayOpenShells(stream::IO, confList::Array{Configuration,1})`  
     ... displays on stream the open configurations, separated by comma, as single string. Nothing is returned otherwise.
@@ -851,7 +854,7 @@ function Basics.displayOpenShells(stream::IO, confList::Array{Configuration,1})
     println(stream, sa)
     
     return(nothing)
-end 
+end ==#
 
 
 """
@@ -986,6 +989,7 @@ end
 =====#
 
     
+#== August 2025, LeadingConfiguration()
 """
 `Basics.excludeConfigurations(confList::Array{Configuration,1},NoElectrons::Int64)`  
     ... excludes all configurations from confList with less than NoElectrons; 
@@ -998,7 +1002,7 @@ function Basics.excludeConfigurations(confList::Array{Configuration,1},NoElectro
     end
     
     return( newConfList )
-end
+end ==#
 
     
 """
@@ -1032,7 +1036,8 @@ function Basics.expandOrbital(orbital::Orbital, boundOrbitals::Dict{Subshell, Or
     return( expansion )
 end
 
-    
+
+#== August 2025, LeadingConfiguration()
 """
 `Basics.extractLeadingConfiguration(level::ManyElectron.Level)`  
     ... extract the leading configuration of the given level; a conf::Configuration is returned.
@@ -1052,9 +1057,10 @@ function Basics.extractLeadingConfiguration(level::ManyElectron.Level)
     conf = allConfs[ wx[2] ]
     
     return( conf )
-end
+end  ==#
 
     
+#== August 2025, LeadingConfigurationR()
 """
 `Basics.extractLeadingConfigurationR(level::ManyElectron.Level)`  
     ... extract the leading relativistic configuration of the given level; a conf::ConfigurationR is returned.
@@ -1074,7 +1080,7 @@ function Basics.extractLeadingConfigurationR(level::ManyElectron.Level)
     conf = allConfs[ wx[2] ]
     
     return( conf )
-end
+end ==#
 
     
 """
@@ -1106,6 +1112,7 @@ function Basics.extractMeanOccupation(basis::Basis)
 end
 
     
+#== August 2025, Multiplicity
 """
 `Basics.extractMultiplicity(conf::Configuration)`  
     ... extracts the multiplicity, i.e. the g-factor, of the configuration conf if all the levels are considered to be degenerate;
@@ -1114,7 +1121,8 @@ end
 """
 function Basics.extractMultiplicity(conf::Configuration)
     g = 0
-    rConfs       = Basics.generateConfigurationRs(conf)
+    ##x rConfs       = Basics.generateConfigurationRs(conf)
+    rConfs       = Basics.generateConfigurations(Basics.RelativisticConfigurations(), conf)
     shellList    = Basics.generateShellList(1, 10, "f")
     subshellList = Basics.generateSubshellList(shellList)
     
@@ -1123,9 +1131,10 @@ function Basics.extractMultiplicity(conf::Configuration)
     end
     
     return( g )
-end
+end  ==#
 
     
+#== August 2025, OpenShellNumber()
 """
 `Basics.extractNoOpenShells(conf::Configuration)`  
     ... determine the number of open (nonrelativistic) shells in conf; a singleton of type AbstractOpenShell is returned.
@@ -1145,7 +1154,7 @@ function Basics.extractNoOpenShells(conf::Configuration)
     else    error("stop a")
     end
     
-end
+end ==#
 
 
 """
@@ -1190,7 +1199,8 @@ end
 """
 function Basics.extractNonrelativisticShellList(multiplet::Multiplet) 
     shellList = Shell[]
-    confs     = Basics.extractNonrelativisticConfigurations(multiplet.levels[1].basis)
+    ##x confs     = Basics.extractNonrelativisticConfigurations(multiplet.levels[1].basis)
+    confs     = Basics.extractConfigurations(Basics.FromBasis(), multiplet.levels[1].basis)
     
     for conf in confs
         for (k,v) in conf.shells
@@ -1217,6 +1227,7 @@ function Basics.extractNonrelativisticShellList(multiplets::Array{Multiplet,1})
 end
 
 
+#== August 2025, Basics.FromBasis(), 
 """
 `Basics.extractNonrelativisticConfigurations(basis::Basis)  
     ... extract all nonrelativistic configurations that contribute to the given set of CSF in basis.csfs. 
@@ -1244,10 +1255,10 @@ function Basics.extractNonrelativisticConfigurations(basis::Basis)
     end 
     
     return( confList )
-end
+end  ==#
 
 
-
+#== August 2025, Basics.FromBasis()
 """
 `Basics.extractNonrelativisticConfigurationFromCsfR(csf::CsfR,  basis::Basis)`  
     ... extract the nonrelativistic configuration from the given CSF that is defined in basis.csfs. 
@@ -1271,9 +1282,10 @@ function  Basics.extractNonrelativisticConfigurationFromCsfR(csf::CsfR,  basis::
     end 
     
     return( conf )
-end
+end  ==#
 
     
+#== August 2025, Basics.FromBasis()
 """
 `Basics.extractOpenShells(conf::Configuration)`  
     ... extract the open (nonrelativistic) shells in conf; a list::Array{Shell,1} is returned.
@@ -1287,9 +1299,10 @@ function Basics.extractOpenShells(conf::Configuration)
     end
     
     return( shells )        
-end
+end ==#
 
     
+#== August 2025, Basics.OpenSubshells()
 """
 `Basics.extractOpenSubshells(conf::ConfigurationR)`  
     ... extract the open (relativistic) subshells in conf; a list::Array{Subshell,1} is returned.
@@ -1303,7 +1316,7 @@ function Basics.extractOpenSubshells(conf::ConfigurationR)
     end
     
     return( subshells )        
-end
+end ==#
 
 
 """
@@ -1348,6 +1361,7 @@ function Basics.extractOpenShellQNfromCsfR(csfR::CsfR, basis::Basis)
 end
 
 
+#== August 2025, Basics.RelativisticConfigurations()
 """
 `Basics.extractRelativisticConfigurations(basis::Basis)  
     ... extract all relativistic configurations that contribute to the given set of CSF in basis.csfs. 
@@ -1395,7 +1409,7 @@ function Basics.extractRelativisticConfigurations(basis::Basis, totalJ::AngularJ
     end 
     
     return( confList )
-end
+end  ==#
 
 
 """
@@ -1601,6 +1615,7 @@ function Basics.extractSubshellList(conf::Configuration, orbitals::Dict{Subshell
 end
 
 
+#== August 2025, OccupationDifference()
 """
 `Basics.extractShellOccupationDifference(confa::Configuration, confb::Configuration)`  
     ... extract the differences in the occupation of shells: occupation(confa) - occupation(confb).
@@ -1638,7 +1653,7 @@ function Basics.extractShellOccupationDifference(confa::ConfigurationR, confb::C
     end
     
     return( occList )
-end
+end ==#
 
 
 """

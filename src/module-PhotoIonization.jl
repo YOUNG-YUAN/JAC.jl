@@ -1468,9 +1468,12 @@ function  extractCrossSection(lines::Array{PhotoIonization.Line,1}, omega::Float
         if  line.initialLevel.index == initialLevel.index  &&  line.initialLevel.energy == initialLevel.energy  &&  
             line.photonEnergy       == omega 
             # Now determined of whether the photoionization refers to the given shell
-            confi     = Basics.extractLeadingConfiguration(line.initialLevel)
-            conff     = Basics.extractLeadingConfiguration(line.finalLevel)
-            shellOccs = Basics.extractShellOccupationDifference(confi::Configuration, conff::Configuration)
+            ##x confi     = Basics.extractLeadingConfiguration(line.initialLevel)
+            ##x conff     = Basics.extractLeadingConfiguration(line.finalLevel)
+            confi     = Basics.extractConfiguration(Basics.LeadingConfiguration(), line.initialLevel)
+            conff     = Basics.extractConfiguration(Basics.LeadingConfiguration(), line.finalLevel)
+            ##x shellOccs = Basics.extractShellOccupationDifference(confi::Configuration, conff::Configuration)
+            shellOccs = Basics.extractFromConfigurations(Basics.OccupationDifference(), confi, conff)
             if  length(shellOccs) > 1  ||  shellOccs[1][2] < 0      error("stop a")   end
             if  shellOccs[1][1] == shell   cs = cs + line.crossSection      end  
         end  

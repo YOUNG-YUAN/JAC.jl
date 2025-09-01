@@ -1,4 +1,11 @@
 
+#== August 2025, the following replacements need to be made and tested properly:
+++ Replace:  Cascade.generateConfigurationsForHollowIons(initialConfigs::Array{Configurations,1}, intoShells::Array{Shell,1}, 
+                                                decayShells::Array{Shell,1}, noElectrons::Int64)
+++ 
+++ See Basics.generateConfigurations(Basics.ForHollowIons(), confs)
+==#
+
 # Functions and methods for scheme::Cascade.HollowIonScheme computations
 
 
@@ -316,7 +323,8 @@ function perform(scheme::HollowIonScheme, comp::Cascade.Computation; output::Boo
     wa = Cascade.generateConfigurationsForHollowIons(comp.initialConfigs, comp.scheme.intoShells, comp.scheme.decayShells, 
                                                         comp.scheme.NoCapturedElectrons)
     # Display and group all configuration together
-    wb = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa, sa="hollow ion configurations ")
+    ##x wb = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa, sa="hollow ion configurations ")
+    wb = Basics.displayConfigurations(comp.nuclearModel.Z, wa, sa="hollow ion configurations ")
     #
     # Determine first all configuration 'blocks' and from them the individual steps of the cascade
     wc = Cascade.generateBlocks(scheme, comp::Cascade.Computation, wb, printout=false)

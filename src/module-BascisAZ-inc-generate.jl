@@ -143,7 +143,8 @@ function Basics.generate(repType::AtomicState.CiExpansion, rep::AtomicState.Repr
     # Generate a list of relativistic configurations and  CSF's for the given subshell list
     relconfList = ConfigurationR[]
     for  conf in rep.refConfigs
-        wa = Basics.generateConfigurationRs(conf)
+        ##x wa = Basics.generateConfigurationRs(conf)
+        wa = Basics.generateConfigurations(Basics.RelativisticConfigurations(), conf)
         append!( relconfList, wa)
     end
     subshellList = Basics.generateSubshellList(relconfList)
@@ -264,7 +265,8 @@ function Basics.generate(repType::AtomicState.GreenExpansion, rep::AtomicState.R
     # Generate all (non-relativistic) configurations from the bound configurations due to the given excitation scheme 
     confList = Basics.generateConfigurationsForExcitationScheme(rep.refConfigs, repType.excitationScheme, settings.nMax, settings.lValues)
     # Print (if required) information about the generated configuration list
-    if  settings.printBefore    Basics.display(stdout, confList)    end
+    ##x if  settings.printBefore    Basics.display(stdout, confList)    end
+    if  settings.printBefore    Basics.displayConfigurations(stdout, confList)    end
     
     # Generate shell list abd a full single-electron spectrum for this potential
     subshellList = Basics.extractRelativisticSubshellList(confList)                      ## extract all subshells that occur in confList
@@ -424,89 +426,13 @@ end
 
 
 """
-`Basics.generateConfigurationRs(conf::Configuration)`  
-    ... to split/decompose a non-relativistic configuration into an list of relativistic ConfigurationR[]. The proper 
-        occupuation of the relativistic subshells is taken into account.
-"""
-function Basics.generateConfigurationRs(conf::Configuration)
-    subshellList = Subshell[]
-    confList     = ConfigurationR[]
-
-    initialize = true;    NoElectrons = 0
-    for (k, occ)  in conf.shells
-        NoElectrons     = NoElectrons + occ
-        wa              = Basics.shellSplitOccupation(k, occ)
-        subshellListNew = Dict{Subshell,Int64}[]
-
-        if  initialize
-            subshellListNew = wa;    initialize = false
-        else
-            for  s in 1:length(subshellList)
-                for  a in 1:length(wa)
-                    wb = Base.merge( subshellList[s], wa[a] )
-                    push!(subshellListNew, wb)
-                end
-            end
-        end
-        subshellList = deepcopy(subshellListNew)
-    end
-    
-    for subsh in subshellList
-    wa = ConfigurationR(subsh, NoElectrons)
-    push!(confList, wa)
-    end
-
-    return( confList )
-end
-
-
-#==
-"""
-`Basics.generate("configuration list: relativistic", conf::Configuration)`  
-    ... to split/decompose a non-relativistic configuration into an list of relativistic ConfigurationR[]. The proper 
-        occupuation of the relativistic subshells is taken into account.
-"""
-function Basics.generate(sa::String, conf::Configuration)
-    subshellList = Subshell[]
-    confList     = ConfigurationR[]
-
-    !(sa == "configuration list: relativistic")  &&   error("Unsupported keystring = $sa")
-
-    initialize = true;    NoElectrons = 0
-    for (k, occ)  in conf.shells
-        NoElectrons     = NoElectrons + occ
-        wa              = Basics.shellSplitOccupation(k, occ)
-        subshellListNew = Dict{Subshell,Int64}[]
-
-        if  initialize
-            subshellListNew = wa;    initialize = false
-        else
-            for  s in 1:length(subshellList)
-                for  a in 1:length(wa)
-                    wb = Base.merge( subshellList[s], wa[a] )
-                    push!(subshellListNew, wb)
-                end
-            end
-        end
-        subshellList = deepcopy(subshellListNew)
-    end
-    
-    for subsh in subshellList
-    wa = ConfigurationR(subsh, NoElectrons)
-    push!(confList, wa)
-    end
-
-    return( confList )
-end  ==#
-
-
-"""
 `Basics.generateCsfRs(conf::ConfigurationR, subshellList::Array{Subshell,1})` 
     ... to construct from a given (relativistic) configuration all possible CSF with regard to the subshell order as specified 
         by subshellList; a list::Array{CsfR,1} is returned.
 """
 function Basics.generateCsfRs(conf::ConfigurationR, subshellList::Array{Subshell,1})
-    parity  = Basics.determineParity(conf)
+    ##x parity  = Basics.determineParity(conf)
+    parity  = Basics.extractFromConfiguration(Basics.GetParity(), conf)
     csfList = CsfR[];   useStandardSubshells = true;    first = true;    previousCsfs = CsfR[]
     # subhshellList = Subshell[];   
     for  subsh in subshellList
@@ -763,7 +689,8 @@ function Basics.generateBasis(confList::Array{Configuration,1}, symmetries::Arra
     #
     relconfList = ConfigurationR[]
     for  conf in confList
-        wa = Basics.generateConfigurationRs(conf)
+        ##x wa = Basics.generateConfigurationRs(conf)
+        wa = Basics.generateConfigurations(Basics.RelativisticConfigurations(), conf)
         append!( relconfList, wa)
     end
     subshellList = Basics.generateSubshellList(relconfList)
@@ -841,7 +768,8 @@ function Basics.generateBasis(refConfigs::Array{Configuration,1}, symmetries::Ar
     #
     relconfList = ConfigurationR[]
     for  conf in confList
-        wa = Basics.generateConfigurationRs(conf)
+        ##x wa = Basics.generateConfigurationRs(conf)
+        wa = Basics.generateConfigurations(Basics.RelativisticConfigurations(), conf)
         append!( relconfList, wa)
     end
     subshellList = Basics.generateSubshellList(relconfList)
@@ -872,6 +800,83 @@ function Basics.generateBasis(refConfigs::Array{Configuration,1}, symmetries::Ar
     return( basis )
 end
 
+
+#== August 2025, Basics.RelativisticConfigurations()
+"""
+`Basics.generateConfigurationRs(conf::Configuration)`  
+    ... to split/decompose a non-relativistic configuration into an list of relativistic ConfigurationR[]. The proper 
+        occupuation of the relativistic subshells is taken into account.
+"""
+function Basics.generateConfigurationRs(conf::Configuration)
+    subshellList = Subshell[]
+    confList     = ConfigurationR[]
+
+    initialize = true;    NoElectrons = 0
+    for (k, occ)  in conf.shells
+        NoElectrons     = NoElectrons + occ
+        wa              = Basics.shellSplitOccupation(k, occ)
+        subshellListNew = Dict{Subshell,Int64}[]
+
+        if  initialize
+            subshellListNew = wa;    initialize = false
+        else
+            for  s in 1:length(subshellList)
+                for  a in 1:length(wa)
+                    wb = Base.merge( subshellList[s], wa[a] )
+                    push!(subshellListNew, wb)
+                end
+            end
+        end
+        subshellList = deepcopy(subshellListNew)
+    end
+    
+    for subsh in subshellList
+    wa = ConfigurationR(subsh, NoElectrons)
+    push!(confList, wa)
+    end
+
+    return( confList )
+end  ==#
+
+
+#==
+"""
+`Basics.generate("configuration list: relativistic", conf::Configuration)`  
+    ... to split/decompose a non-relativistic configuration into an list of relativistic ConfigurationR[]. The proper 
+        occupuation of the relativistic subshells is taken into account.
+"""
+function Basics.generate(sa::String, conf::Configuration)
+    subshellList = Subshell[]
+    confList     = ConfigurationR[]
+
+    !(sa == "configuration list: relativistic")  &&   error("Unsupported keystring = $sa")
+
+    initialize = true;    NoElectrons = 0
+    for (k, occ)  in conf.shells
+        NoElectrons     = NoElectrons + occ
+        wa              = Basics.shellSplitOccupation(k, occ)
+        subshellListNew = Dict{Subshell,Int64}[]
+
+        if  initialize
+            subshellListNew = wa;    initialize = false
+        else
+            for  s in 1:length(subshellList)
+                for  a in 1:length(wa)
+                    wb = Base.merge( subshellList[s], wa[a] )
+                    push!(subshellListNew, wb)
+                end
+            end
+        end
+        subshellList = deepcopy(subshellListNew)
+    end
+    
+    for subsh in subshellList
+    wa = ConfigurationR(subsh, NoElectrons)
+    push!(confList, wa)
+    end
+
+    return( confList )
+end  ==#
 
 
 """
@@ -949,6 +954,7 @@ function Basics.generateConfigurations(refConfigs::Array{Configuration,1}, fromS
     
     return( confList )
 end
+
 
 
 """
@@ -1073,6 +1079,7 @@ end
 
 
 
+#==  August 2025, replaced by Basics.AddElectrons(), ...
 """
 `Basics.generateConfigurationsWithAdditionalElectron(confs::Array{Configuration,1}, addShells::Array{Shell,1})`  
     ... generates a list of non-relativistic configurations for the given (reference) confs and with one additional electron
@@ -1123,9 +1130,11 @@ function Basics.generateConfigurationsWithAdditionalElectrons(confs::Array{Confi
     
     return( newConfList )
 end
+==#
 
 
 
+#==  August 2025, replaced by Basics.AddElectrons(), Basics.ExciteElectrons(), ...
 """
 `Basics.generateConfigurationsWithElectronCapture(confs::Array{Configuration,1}, fromShells::Array{Shell,1}, toShells::Array{Shell,1}, noex::Int64)`  
     ... generates a list of non-relativistic configurations for the given (reference) confs and with one additional (cpatured) 
@@ -1154,10 +1163,11 @@ function Basics.generateConfigurationsWithElectronCapture(confs::Array{Configura
     newConfList = unique(newConfList)
     
     return( newConfList )
-end
+end ==#
 
 
 
+#==  August 2025, replaced by Basics.AddElectrons(), Basics.ExciteElectrons(), ...
 """
 `Basics.generateConfigurationsWithElectronLoss(confs::Array{Configuration,1}, fromShells::Array{Shell,1})`  
     ... generates a list of non-relativistic configurations for the given (reference) confs and with one removed (ionized) 
@@ -1184,7 +1194,7 @@ function Basics.generateConfigurationsWithElectronLoss(confs::Array{Configuratio
     newConfList = unique(newConfList)
     
     return( newConfList )
-end
+end  ==#
 
 
 """

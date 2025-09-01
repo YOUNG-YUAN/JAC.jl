@@ -1,4 +1,21 @@
 
+#== August 2025, the following replacements need to be made and tested properly:
+++ Rename -inc-file ... into PhotoRecombination
+++ Replace here: 
+module-Cascade-inc-radiative-recombination.jl:`Cascade.generateConfigurationsForRadiativeRecombination(multiplets::Array{Multiplet,1},  scheme::RadiativeRecombinationScheme, 
+module-Cascade-inc-radiative-recombination.jl:function generateConfigurationsForRadiativeRecombination(multiplets::Array{Multiplet,1},  scheme::RadiativeRecombinationScheme, 
+module-Cascade-inc-radiative-recombination.jl:    wa  = Cascade.generateConfigurationsForRadiativeRecombination(multiplets, comp.scheme, comp.nuclearModel, comp.grid)
+
+++ Cascade.generateConfigurationsForRadiativeRecombination(multiplets::Array{Multiplet,1}, 
+    scheme::RadiativeRecombinationScheme, nm::Nuclear.Model, grid::Radial.Grid) ... generates all possible 
+    configurations due to radiative   recombination into the given multiplets. The number and type of such 
+    (singly-excited) configurations depend on the maximum principle and orbital angular quantum number of 
+    the additional intoShells, into which electrons are captured. A Tuple(initialConfList::Array{Configuration,1},
+    confList::Array{Configuration,1}) is returned.
+
+++ See Basics.generateConfigurations(ForPhotoRecombination(), confs)
+==#
+
 # Functions and methods for scheme::Cascade.RadiativeRecombinationScheme computations
 
 
@@ -138,7 +155,8 @@ function generateBlocks(scheme::Cascade.RadiativeRecombinationScheme, comp::Casc
             # Determine a list of hydrogenic orbitals for later use 
             relconfList = ConfigurationR[]
             for  confa in confs
-                wa = Basics.generateConfigurationRs(confa)
+                ##x wa = Basics.generateConfigurationRs(confa)
+                wa = Basics.generateConfigurations(Basics.RelativisticConfigurations(), confa)
                 append!( relconfList, wa)
             end
             subshellList = Basics.generateSubshellList(relconfList)
@@ -159,7 +177,9 @@ function generateBlocks(scheme::Cascade.RadiativeRecombinationScheme, comp::Casc
             else
                 # Generate a list of relativistic configurations and determine an ordered list of subshells for these configurations
                 relconfList  = ConfigurationR[]
-                wa           = Basics.generateConfigurationRs(confa);    append!( relconfList, wa)
+                ##x wa           = Basics.generateConfigurationRs(confa)
+                wa           = Basics.generateConfigurations(Basics.RelativisticConfigurations(), confa)
+                append!( relconfList, wa)
                 subshellList = Basics.generateSubshellList(relconfList)
                 Defaults.setDefaults("relativistic subshell list", subshellList; printout=false)
                 # Generate the relativistic CSF's for the given subshell list
@@ -232,7 +252,8 @@ function generateConfigurationsForRadiativeRecombination(multiplets::Array{Multi
     # 'radiatively-stabilized' configurations due to the specificed excitations
     initialConfList = Configuration[]
     for mp  in  multiplets   
-        confList = Basics.extractNonrelativisticConfigurations(mp.levels[1].basis)
+        ##x confList = Basics.extractNonrelativisticConfigurations(mp.levels[1].basis)
+        confList = Basics.extractConfigurations(Basics.FromBasis(), mp.levels[1].basis)
         for  conf in confList   if  conf in initialConfList   nothing   else   push!(initialConfList, conf)      end      end
     end
     fromShells = Shell[]
@@ -298,8 +319,10 @@ function perform(scheme::RadiativeRecombinationScheme, comp::Cascade.Computation
     #
     # Generate subsequent cascade configurations as well as display and group them together
     wa  = Cascade.generateConfigurationsForRadiativeRecombination(multiplets, comp.scheme, comp.nuclearModel, comp.grid)
-    wb1 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[1], sa="initial configurations of the RR cascade ")
-    wb2 = Cascade.groupDisplayConfigurationList(37., wa[2], sa="final configurations of the RR cascade ")  # Use Z such that no mean binding energy is computed.
+    ##x wb1 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[1], sa="initial configurations of the RR cascade ")
+    ##x wb2 = Cascade.groupDisplayConfigurationList(37., wa[2], sa="final configurations of the RR cascade ")  # Use Z such that no mean binding energy is computed.
+    wb1 = Basics.displayConfigurations(comp.nuclearModel.Z, wa[1], sa="initial configurations of the RR cascade ")
+    wb2 = Basics.displayConfigurations(37., wa[2], sa="final configurations of the RR cascade ")  # Use Z such that no mean binding energy is computed.
     #
     # Determine first all configuration 'blocks' and from them the individual steps of the cascade
     wc1 = Cascade.generateBlocks(scheme, comp::Cascade.Computation, wb1)

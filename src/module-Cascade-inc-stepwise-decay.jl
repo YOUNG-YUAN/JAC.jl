@@ -1,4 +1,11 @@
 
+#== August 2025, the following replacements need to be made and tested properly:
+++ Replace below:  Cascade.generateConfigurationsForStepwiseDecay(scheme::Cascade.StepwiseDecayScheme, initialConfigs::Array{Configurations,1})
+++ See Basics.generateConfigurations(Basics.ForStepwiseDecay(), confs)
+==#
+
+# Functions and methods for scheme::Cascade.HollowIonScheme computations
+
 # Functions and methods for cascade computation
 
 
@@ -246,7 +253,8 @@ function generateConfigurationsForStepwiseDecay(scheme::Cascade.StepwiseDecaySch
         for shell in decayShells    if  haskey(nshells, shell)   else    nshells[shell] = 0    end   end
         push!(newConfigs, Configuration(nshells, conf.NoElectrons))
     end
-    newConfigs = Basics.excludeConfigurations(newConfigs, initialNo-maxElectronLoss)
+    ##x newConfigs = Basics.excludeConfigurations(newConfigs, initialNo-maxElectronLoss)
+    newConfigs = Basics.extractConfigurations(Basics.ByNumber([initialNo-maxElectronLoss]), newConfigs)
     @show "a", newConfigs
     # Now add all decay configurations
     allConfigs   = copy(newConfigs)
@@ -281,7 +289,8 @@ function generateConfigurationsForStepwiseDecay(scheme::Cascade.StepwiseDecaySch
         if length(dConfigs) > 0     append!(decayConfigs, dConfigs)     else   further = false      end
     end
     decayConfigs = unique(decayConfigs)
-    decayConfigs = Basics.excludeConfigurations(decayConfigs, initialNo-maxElectronLoss)
+    ##x decayConfigs = Basics.excludeConfigurations(decayConfigs, initialNo-maxElectronLoss)
+    decayConfigs = Basics.extractConfigurations(Basics.ByNumber([initialNo-maxElectronLoss]), decayConfigs)
     allConfigs   = append!(allConfigs, decayConfigs)
     dConfigs     = copy(newConfigs)
     #
@@ -291,7 +300,8 @@ function generateConfigurationsForStepwiseDecay(scheme::Cascade.StepwiseDecaySch
         if length(dConfigs) > 0     append!(decayConfigs, dConfigs)     else   further = false      end
     end
     decayConfigs = unique(decayConfigs)
-    decayConfigs = Basics.excludeConfigurations(decayConfigs, initialNo-maxElectronLoss)
+    ##x decayConfigs = Basics.excludeConfigurations(decayConfigs, initialNo-maxElectronLoss)
+    decayConfigs = Basics.extractConfigurations(Basics.ByNumber([initialNo-maxElectronLoss]), decayConfigs)
     allConfigs   = append!(allConfigs, decayConfigs)
     dConfigs     = copy(decayConfigs)
     #
@@ -302,7 +312,8 @@ function generateConfigurationsForStepwiseDecay(scheme::Cascade.StepwiseDecaySch
     end
     allConfigs   = append!(allConfigs, decayConfigs)
     allConfigs   = unique(allConfigs)
-    allConfigs   = Basics.excludeConfigurations(allConfigs, initialNo-maxElectronLoss)
+    ##x allConfigs   = Basics.excludeConfigurations(allConfigs, initialNo-maxElectronLoss)
+    allConfigs   = Basics.extractConfigurations(Basics.ByNumber([initialNo-maxElectronLoss]), allConfigs)
     #
     # Discard configurations with energies higher than initial configurations after electron capture;
     # this may be required for a very large number of configurations (not yet)
@@ -344,8 +355,10 @@ function perform(scheme::StepwiseDecayScheme, comp::Cascade.Computation; output:
     # Generate subsequent cascade configurations as well as display and group them together
     wax  = Cascade.generateConfigurationList(multiplets, comp.scheme.maxElectronLoss, comp.scheme.NoShakeDisplacements)
     wa   = Cascade.generateConfigurationsForStepwiseDecay(comp.scheme, comp.initialConfigs)
-    wb  = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa, sa="decay ")
-    wbx = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wax, sa="OLD decay ")
+    ##x wb  = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa, sa="decay ")
+    ##x wbx = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wax, sa="OLD decay ")
+    wb  = Basics.displayConfigurations(comp.nuclearModel.Z, wa, sa="decay ")
+    wbx = Basics.displayConfigurations(comp.nuclearModel.Z, wax, sa="OLD decay ")
     #
     # Determine first all configuration 'blocks' and from them the individual steps of the cascade
     wc = Cascade.generateBlocks(comp, wb, basis.orbitals, sa="for the decay cascade:")

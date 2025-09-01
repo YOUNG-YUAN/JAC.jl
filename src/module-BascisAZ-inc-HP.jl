@@ -213,7 +213,7 @@ function Basics.isViolated(conf::Configuration, restriction::AbstractConfigurati
         for (sh,v) in  conf.shells
             if  sh.n >= restriction.nmin    ||    sh.l >= restriction.lmin    ne = ne + v   end
         end
-        if  ne > restriction.ne                                   wa = true   end
+        if  ne > restriction.ne                                                                wa = true   end
     elseif  typeof(restriction) == RestrictMaximumDisplacements
         shells = Basics.extractShellList([conf, restriction.conf])
         dis = 0;   
@@ -225,9 +225,10 @@ function Basics.isViolated(conf::Configuration, restriction::AbstractConfigurati
             else    error("stop a")
             end
         end
-        if  dis > restriction.maxDisplace                         wa = true   end
+        if  dis > restriction.maxDisplace                                                      wa = true   end
     elseif  typeof(restriction) == RestrictParity
-        if  Basics.determineParity(conf) != restriction.parity    wa = true   end
+        ##x if  Basics.determineParity(conf) != restriction.parity    wa = true   end
+        if  Basics.extractFromConfiguration(Basics.GetParity(), conf) != restriction.parity    wa = true   end
     elseif  typeof(restriction) == RestrictToShellDoubles
         for (sh,v) in  conf.shells
             if  sh.n >= restriction.nmin    
@@ -338,6 +339,7 @@ function Basics.merge(bases::Array{Basis,1})
 end
 
 
+#== August 2025, just moved
 """
 `Basics.merge(aList::Array{Configuration,1}, bList::Array{Configuration,1}, ...)`  
     ... to merge two (or more) configuration list into a single list and to unify them. 
@@ -350,7 +352,7 @@ end
 function Basics.merge(aList::Array{Configuration,1}, bList::Array{Configuration,1}, cList::Array{Configuration,1})
     dList = Basics.merge(aList, bList);     dList = Basics.merge(dList, cList)
     return( dList )
-end
+end  ==#
 
 
 """

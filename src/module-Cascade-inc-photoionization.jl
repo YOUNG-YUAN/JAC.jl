@@ -1,4 +1,13 @@
 
+#== August 2025, the following replacements need to be made and tested properly:
+++ module-Cascade-inc-photoionization.jl:    ionConfList = Basics.generateConfigurationsWithElectronLoss(initialConfList, scheme.excitationFromShells)
+++ Basics.generateConfigurationsWithElectronLoss(confs::Array{Configuration,1}, fromShells::Array{Shell,1}) 
+   ... generates a list of non-relativistic configurations for the given (reference) confs and with one 
+       removed (ionized) electron fromShells.
+++ See Basics.generateConfigurations(RemoveElectrons(), confs)
+==#
+
+
 # Functions and methods for photoionization (cascade) computations
 
 """
@@ -127,7 +136,8 @@ function generateConfigurationsForPhotoionization(multiplets::Array{Multiplet,1}
     # specificed excitation/ionization
     initialConfList = Configuration[];   ionConfList = Configuration[];   excConfList = Configuration[];
     for mp  in  multiplets   
-        confList = Basics.extractNonrelativisticConfigurations(mp.levels[1].basis)
+        ##x confList = Basics.extractNonrelativisticConfigurations(mp.levels[1].basis)
+        confList = Basics.extractConfigurations(Basics.FromBasis(), mp.levels[1].basis)
         for  conf in confList   if  conf in initialConfList   nothing   else   push!(initialConfList, conf)      end      end
     end
     # 
@@ -172,8 +182,10 @@ function perform(scheme::PhotoIonizationScheme, comp::Cascade.Computation; outpu
     #
     # Generate subsequent cascade configurations as well as display and group them together
     wa  = Cascade.generateConfigurationsForPhotoionization(multiplets, comp.scheme, comp.nuclearModel)
-    wb1 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[1], sa="(initial part of the) photoionization ")
-    wb2 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[2], sa="(generated part of the) photoionization ")
+    ##x wb1 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[1], sa="(initial part of the) photoionization ")
+    ##x wb2 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[2], sa="(generated part of the) photoionization ")
+    wb1 = Basics.displayConfigurations(comp.nuclearModel.Z, wa[1], sa="(initial part of the) photoionization ")
+    wb2 = Basics.displayConfigurations(comp.nuclearModel.Z, wa[2], sa="(generated part of the) photoionization ")
     #
     # Determine first all configuration 'blocks' and from them the individual steps of the cascade
     wc1 = Cascade.generateBlocks(scheme, comp::Cascade.Computation, wb1)

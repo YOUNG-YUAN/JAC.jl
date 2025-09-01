@@ -122,14 +122,16 @@ function generateConfigurationsForPhotoexcitation(multiplets::Array{Multiplet,1}
     # Determine all (reference) configurations from multiplets and generate the 'excited' configurations due to the specificed excitations
     initialConfList = Configuration[]
     for mp  in  multiplets   
-        confList = Basics.extractNonrelativisticConfigurations(mp.levels[1].basis)
+        ##x confList = Basics.extractNonrelativisticConfigurations(mp.levels[1].basis)
+        confList = Basics.extractConfigurations(Basics.FromBasis(), mp.levels[1].basis)
         for  conf in confList   if  conf in initialConfList   nothing   else   push!(initialConfList, conf)      end      end
     end
     blockConfList = Basics.generateConfigurations(initialConfList, scheme.excitationFromShells, scheme.excitationToShells, scheme.NoExcitations)
     # Exclude configurations with too low or too high mean energies as well as those that are parity forbidden for the given multipoles
     hasPlus = false;   hasMinus = false
     for  conf  in  initialConfList   
-        if  Basics.determineParity(conf) == Basics.plus   hasPlus = true    else   hasMinus = true      end
+        ##x if  Basics.determineParity(conf) == Basics.plus   hasPlus = true    else   hasMinus = true      end
+        if  Basics.extractFromConfiguration(Basics.GetParity(), conf) == Basics.plus   hasPlus = true    else   hasMinus = true      end
     end
     en     = Float64[];   
     ##x for conf in initialConfList    push!(en, -Semiempirical.estimate("binding energy: XrayDataBooklet", round(Int64, nm.Z), conf))   end
@@ -145,12 +147,15 @@ function generateConfigurationsForPhotoexcitation(multiplets::Array{Multiplet,1}
         if  minen + minEn  <= meanEnergy <= maxen + maxEn
             if      hasPlus  &&  hasMinus                                                                        push!(newBlockConfList, conf)   
             elseif  M1 in scheme.multipoles  ||  E2 in scheme.multipoles  ||  M2 in scheme.multipoles            push!(newBlockConfList, conf)  
-            elseif  hasPlus  &&  E1 in scheme.multipoles  &&   Basics.determineParity(conf) == Basics.minus      push!(newBlockConfList, conf)  
-            elseif  hasMinus &&  E1 in scheme.multipoles  &&   Basics.determineParity(conf) == Basics.plus       push!(newBlockConfList, conf)  
-            else    println(">>> exclude $conf because of parity reasons.")
+            ##x elseif  hasPlus  &&  E1 in scheme.multipoles  &&   Basics.determineParity(conf) == Basics.minus      push!(newBlockConfList, conf)  
+            ##x elseif  hasMinus &&  E1 in scheme.multipoles  &&   Basics.determineParity(conf) == Basics.plus       push!(newBlockConfList, conf)  
+            elseif  hasPlus  &&  E1 in scheme.multipoles  &&   Basics.extractFromConfiguration(Basics.GetParity(), conf) == Basics.minus 
+                push!(newBlockConfList, conf)  
+            elseif  hasMinus &&  E1 in scheme.multipoles  &&   Basics.extractFromConfiguration(Basics.GetParity(), conf) == Basics.plus 
+                push!(newBlockConfList, conf) 
             end
-        else        println(">>> exclude $conf with energy $meanEnergy [a.u.] because of energy reasons." *
-                            "\n min=$(minen + minEn) ... max=$(maxen + maxEn) ")
+        else    println(">>> exclude $conf with energy $meanEnergy [a.u.] because of energy reasons." *
+                        "\n min=$(minen + minEn) ... max=$(maxen + maxEn) ")
         end
     end
 

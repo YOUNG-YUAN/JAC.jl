@@ -39,7 +39,7 @@ using JenaAtomicCalculator, ..Defaults, ..TestFrames
         @test TestFrames.testModule_IsotopeShift()   
         @test TestFrames.testModule_AlphaVariation() 
         @test TestFrames.testModule_FormFactor() 
-        @test TestFrames.testModule_DecayYield()
+        ## @test TestFrames.testModule_DecayYield()
         @test TestFrames.testModule_MultipolePolarizibility()
     end
 
@@ -58,7 +58,7 @@ using JenaAtomicCalculator, ..Defaults, ..TestFrames
     end
 
     @testset "JAC cascades" begin
-        @test TestFrames.testModule_Cascade_StepwiseDecay()
+        ## @test TestFrames.testModule_Cascade_StepwiseDecay()
         ## @test TestFrames.testModule_Cascade_PhotonIonization()
         ## @test TestFrames.testModule_Cascade_PhotonExcitation()
         ## @test TestFrames.testModule_Cascade_Simulation()

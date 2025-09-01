@@ -232,7 +232,8 @@ function initializeBasis(configs::Array{Configuration,1}, nuclearModel::Nuclear.
     relconfList = ConfigurationR[]
     for  conf in configs
         ##x wa = Basics.generate("configuration list: relativistic", conf)
-        wa = Basics.generateConfigurationRs(conf)
+        ##x wa = Basics.generateConfigurationRs(conf)
+        wa = Basics.generateConfigurations(Basics.RelativisticConfigurations(), conf)
         append!( relconfList, wa)
     end
     if  printout    for  i = 1:length(relconfList)    println(">>> include ", relconfList[i])    end   end

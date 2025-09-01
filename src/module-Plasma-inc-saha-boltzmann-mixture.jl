@@ -931,7 +931,8 @@ function generateIonLevelData(scheme::Plasma.SahaBoltzmannScheme, isoClass::Isot
     
     for  level in repMultiplet.levels
         # Determine the uppermost shell of the given level
-        confs          = Basics.extractNonrelativisticConfigurations(level.basis)
+        ##x confs          = Basics.extractNonrelativisticConfigurations(level.basis)
+        confs          = Basics.extractConfigurations(Basics.FromBasis(), level.basis)
         shellList      = Basics.extractNonrelativisticShellList(confs)
         uppermostShell = Shell(0,0)
         for  shell in shellList     if  shell > uppermostShell    uppermostShell = shell    end     end

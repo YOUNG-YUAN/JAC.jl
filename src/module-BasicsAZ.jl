@@ -25,6 +25,7 @@ using  Printf,  LinearAlgebra, GaussQuadrature, JenaAtomicCalculator, ..Basics, 
 
 include("module-BascisAZ-inc-AG.jl")
 include("module-BascisAZ-inc-compute.jl")
+include("module-BascisAZ-inc-configurations.jl")
 include("module-BascisAZ-inc-generate.jl")
 include("module-BascisAZ-inc-HP.jl")
 include("module-BascisAZ-inc-perform.jl")

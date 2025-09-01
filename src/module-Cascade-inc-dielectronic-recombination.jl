@@ -1,4 +1,21 @@
 
+#== August 2025, the following replacements need to be made and tested properly:
+++ Replace: module-Cascade-inc-dielectronic-recombination.jl:`Cascade.generateConfigurationsForDielectronicCapture(multiplets::Array{Multiplet,1},  scheme::DielectronicRecombinationScheme, 
+++ module-Cascade-inc-dielectronic-recombination.jl:function generateConfigurationsForDielectronicCapture(multiplets::Array{Multiplet,1},  scheme::DielectronicRecombinationScheme, 
+++ module-Cascade-inc-dielectronic-recombination.jl:    wa  = Cascade.generateConfigurationsForDielectronicCapture(multiplets, comp.scheme, comp.nuclearModel, comp.grid)
+
+++ Cascade.generateConfigurationsForDielectronicCapture(multiplets::Array{Multiplet,1}, 
+   scheme::DielectronicRecombinationScheme, nm::Nuclear.Model, grid::Radial.Grid) ... generates all possible 
+   doubly-excited configurations due to (dielectronic) electron capture into the given multiplets. The number 
+   and type of such doubly-generated configurations depend on (1) the maximum (electron) energy for 
+   capturing an electron that is closely related to the (maximum) temperature of the plasma; (2) the 
+   fromShells from which (and how many displacements) are accepted as well as (3) the maximum principle 
+   and orbital angular quantum number of the additional (to-) shellsthe fromShells into which
+   electrons excited and/or captured. A Tuple(initialConfList::Array{Configuration,1}, 
+
+++ See Basics.generateConfigurations(ForDielectronicRecombination(), confs)
+==#
+
 # Functions and methods for cheme::Cascade.DielectronicRecombinationScheme computations
 
 
@@ -151,7 +168,8 @@ function generateBlocks(scheme::Cascade.DielectronicRecombinationScheme, comp::C
             # Determine a list of hydrogenic orbitals for later use 
             relconfList = ConfigurationR[]
             for  confa in confs
-                wa = Basics.generateConfigurationRs(confa)
+                ##x wa = Basics.generateConfigurationRs(confa)
+                wa = Basics.generateConfigurations(Basics.RelativisticConfigurations(), confa)
                 append!( relconfList, wa)
             end
             subshellList = Basics.generateSubshellList(relconfList)
@@ -173,7 +191,9 @@ function generateBlocks(scheme::Cascade.DielectronicRecombinationScheme, comp::C
             else
                 # Generate a list of relativistic configurations and determine an ordered list of subshells for these configurations
                 relconfList  = ConfigurationR[]
-                wa           = Basics.generateConfigurationRs(confa);    append!( relconfList, wa)
+                ##x wa           = Basics.generateConfigurationRs(confa)
+                wa           = Basics.generateConfigurations(Basics.RelativisticConfigurations(), confa)
+                append!( relconfList, wa)
                 subshellList = Basics.generateSubshellList(relconfList)
                 Defaults.setDefaults("relativistic subshell list", subshellList; printout=false)
                 # Generate the relativistic CSF's for the given subshell list
@@ -292,7 +312,8 @@ function generateCaptureConfigurations(multiplets::Array{Multiplet,1},  coreConf
     nCount = 0
     for  n = 1:nMax,   l = 0:lMax 
         if  l > n - 1    continue   end
-        newConfList = Basics.generateConfigurationsWithAdditionalElectron(coreConfList, [Shell(n,l)])
+        ##x newConfList = Basics.generateConfigurationsWithAdditionalElectron(coreConfList, [Shell(n,l)])
+        newConfList = Basics.generateConfigurations(Basics.AddElectrons(1, [Shell(n,l)]), coreConfList)
         for  conf in newConfList
             orbitals  = copy(mp.levels[1].basis.orbitals)
             subshells = Basics.extractSubshellList(conf, orbitals)
@@ -325,7 +346,7 @@ end
 
 """
 `Cascade.generateConfigurationsForDielectronicCapture(multiplets::Array{Multiplet,1},  scheme::DielectronicRecombinationScheme, 
-                                                    nm::Nuclear.Model, grid::Radial.Grid)`  
+                                                      nm::Nuclear.Model, grid::Radial.Grid)`  
     ... generates all possible doubly-excited configurations due to an (dielectronic) electron capture into the given multiplets.
         The number and type of such doubly-generated configurations depend on (1) the maximum (electron) energy for capturing an electron
         that is closely related to the (maximum) temperature of the plasma; (2) the fromShells from which (and how many displacements)
@@ -334,15 +355,17 @@ end
         decayConfList::Array{Configuration,1}) is returned.
 """
 function generateConfigurationsForDielectronicCapture(multiplets::Array{Multiplet,1},  scheme::DielectronicRecombinationScheme, 
-                                                    nm::Nuclear.Model, grid::Radial.Grid)
+                                                      nm::Nuclear.Model, grid::Radial.Grid)
     # Determine all (reference) configurations from multiplets and generate the 'excited' configurations due to the specificed excitations
     initialConfList = Configuration[]
     for mp  in  multiplets   
-        confList = Basics.extractNonrelativisticConfigurations(mp.levels[1].basis)
+        ##x confList = Basics.extractNonrelativisticConfigurations(mp.levels[1].basis)
+        confList = Basics.extractConfigurations(Basics.FromBasis(), mp.levels[1].basis)
         for  conf in confList   if  conf in initialConfList   nothing   else   push!(initialConfList, conf)      end      end
     end
     coreConfList    = Basics.generateConfigurations(initialConfList, scheme.excitationFromShells, scheme.excitationToShells, 
                                                     scheme.NoExcitations)
+    error("Substitution unclear: need to be re-thought")
     if scheme.calcWithoutIntoShells
         captureConfList = Cascade.generateCaptureConfigurations(multiplets, coreConfList, scheme, nm, grid)
     else
@@ -424,9 +447,12 @@ function perform(scheme::DielectronicRecombinationScheme, comp::Cascade.Computat
     #
     # Generate subsequent cascade configurations as well as display and group them together
     wa  = Cascade.generateConfigurationsForDielectronicCapture(multiplets, comp.scheme, comp.nuclearModel, comp.grid)
-    wb1 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[1], sa="initial configurations of the DR cascade ")
-    wb2 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[2], sa="doubly-excited capture configurations of the DR cascade ")
-    wb3 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[3], sa="decay configurations of the DR cascade ")
+    ##x wb1 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[1], sa="initial configurations of the DR cascade ")
+    ##x wb2 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[2], sa="doubly-excited capture configurations of the DR cascade ")
+    ##x wb3 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[3], sa="decay configurations of the DR cascade ")
+    wb1 = Basics.displayConfigurations(comp.nuclearModel.Z, wa[1], sa="initial configurations of the DR cascade ")
+    wb2 = Basics.displayConfigurations(comp.nuclearModel.Z, wa[2], sa="doubly-excited capture configurations of the DR cascade ")
+    wb3 = Basics.displayConfigurations(comp.nuclearModel.Z, wa[3], sa="decay configurations of the DR cascade ")
     #
     # Determine first all configuration 'blocks' and from them the individual steps of the cascade
     wc1 = Cascade.generateBlocks(scheme, comp::Cascade.Computation, wb1)

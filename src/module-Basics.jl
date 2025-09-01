@@ -35,7 +35,7 @@ function determineHoleShells                                    end
 function determineMeanEnergy                                    end
 function determineNearestPoints                                 end
 function determineNonorthogonalShellOverlap                     end
-function determineParity                                        end
+##x function determineParity                                        end
 function determinePolarizationLambda                            end
 function determinePolarizationVector                            end
 function determineSelectedLines                                 end
@@ -43,47 +43,54 @@ function determineSelectedPathways                              end
 function diagonalize                                            end
 function diracDelta                                             end
 function display                                                end
+function displayConfigurationThemes                             end
+function displayConfiguration                                   end
+function displayConfigurations                                  end
 function displayLevels                                          end
 function displayMeanEnergies                                    end
 function displayMeshes                                          end
-function displayOpenShells                                      end
+##x function displayOpenShells                                      end
 function displayOrbitalOverlap                                  end
 function displayOrbitalProperties                               end
-function excludeConfigurations                                  end
+##x function excludeConfigurations                                  end
 function excludeDoubles                                         end
 function expandOrbital                                          end
-function extractLeadingConfiguration                            end
-function extractLeadingConfigurationR                           end
+function extractConfiguration                                   end
+function extractConfigurations                                  end
+function extractFromConfiguration                               end
+function extractFromConfigurations                              end
+##x function extractLeadingConfiguration                            end
+##x function extractLeadingConfigurationR                           end
 function extractMeanEnergy                                      end
 function extractMeanOccupation                                  end
-function extractMultiplicity                                    end
-function extractNoOpenShells                                    end
+##x function extractMultiplicity                                    end
+##x function extractNoOpenShells                                    end
 function extractNonrelativisticShellList                        end
-function extractNonrelativisticConfigurations                   end
-function extractNonrelativisticConfigurationFromCsfR            end
-function extractOpenShells                                      end
-function extractOpenSubshells                                   end
+##x function extractNonrelativisticConfigurations                   end
+##x function extractNonrelativisticConfigurationFromCsfR            end
+##x function extractOpenShells                                      end
+##x function extractOpenSubshells                                   end
 function extractOpenShellQNfromCsfNR                            end
 function extractOpenShellQNfromCsfR                             end
-function extractRelativisticConfigurations                      end
+##x function extractRelativisticConfigurations                      end
 function extractRelativisticConfigurationFromCsfR               end
 function extractRelativisticSubshellList                        end
 function extractRydbergSubshellList                             end
 function extractShellList                                       end
-function extractShellOccupationDifference                       end
+##x function extractShellOccupationDifference                       end
 function extractShellOccupationFromCsfR                         end
 function extractSubshellList                                    end
 function extractValenceShell                                    end
 function FermiDirac                                             end
 function generate                                               end
 function generateBasis                                          end
-function generateConfigurationRs                                end
+##x function generateConfigurationRs                                end
 function generateConfigurations                                 end
 function generateConfigurationsForExcitationScheme              end
-function generateConfigurationsWithAdditionalElectron           end
-function generateConfigurationsWithAdditionalElectrons          end
-function generateConfigurationsWithElectronCapture              end
-function generateConfigurationsWithElectronLoss                 end
+##x function generateConfigurationsWithAdditionalElectron           end
+##x function generateConfigurationsWithAdditionalElectrons          end
+##x function generateConfigurationsWithElectronCapture              end
+##x function generateConfigurationsWithElectronLoss                 end
 function generateCsfRs                                          end
 function generateFieldCoordinates                               end
 function generateLevelWithExtraElectron                         end
@@ -113,6 +120,7 @@ function isViolated                                             end
 function isZero                                                 end
 function lastPoint                                              end
 function merge                                                  end
+function mergeConfigurations                                    end
 function modifyLevelEnergies                                    end
 function modifyLevelMixing                                      end
 function perform                                                end

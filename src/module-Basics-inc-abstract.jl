@@ -257,6 +257,665 @@ export  AbstractContinuumNormalization,   PureSineNorm,   CoulombSineNorm,   Ong
 
 
 """
+`abstract type Basics.AbstractConfigurationRestriction` 
+    ... defines an abstract types for dealing with restrictions that need to be applied to a list of configurations.
+        Typically, a loop through is made through all given restrictions and all configurations are tested to obey all
+        these restrictions. Two contradicting restrictions, for instance RestrictParity(plus) & RestrictParity(minus),
+        therefore leads zero configurations in all cases. It remains the reponsibility of the user to make sure that
+        the given restrictions are consistent with what is to be achieved. The given set of restrictions can be easily
+        extended if this need arises by the users.
+
+    + RestrictMaximumDisplacements(..)  ... to restrict the maximum replacements wrt a (2nd) configuration.
+    + RestrictNoElectronsTo(..)         ... to restrict the total number of electron in high subshells.
+    + RestrictParity(..)                ... to restrict to configurations with a given parity.
+    + RestrictToShellDoubles(..)        ... to allow only double occupations in high subshells.
+    + RequestMinimumOccupation(..)      ... to request a minimum occupation in a given set of shells.
+    + RequestMaximumOccupation(..)      ... to request a maximum occupation in a given set of shells.
+"""
+abstract type  AbstractConfigurationRestriction      end
+
+export  AbstractConfigurationRestriction, RestrictMaximumDisplacements, RestrictNoElectronsTo, RestrictParity, 
+        RestrictToShellDoubles, RequestMinimumOccupation, RequestMaximumOccupation
+
+"""
+`struct  Basics.RestrictMaximumDisplacements  <: AbstractConfigurationRestriction`   
+    ... restrict the maximum replacements w.r.t. (another) given configuration, which can have a different number of electrons.
+        A "displacement" is simply defined as the difference of occuation numbers. This restriction is useful to determine allowed
+        configurations in a second-order treatment of atomic processes. An odd number of displacement naturally arise for all 
+        configurations which differ by one or three electrons from the reference configurations. Several restrictions of this
+        type can be formulated but are treated separately.
+
+    + conf          ::Configuration   ... configuration w.r.t. which displacements are taken.
+    + maxDisplace   ::Int64           ... maximum number of displacements >= 0.
+"""
+struct   RestrictMaximumDisplacements  <: AbstractConfigurationRestriction
+    conf            ::Configuration
+    maxDisplace     ::Int64
+end
+
+
+function Base.string(res::RestrictMaximumDisplacements)
+    sa = "Restrict to configurations with maximum $(res.maxDisplace) displacements w.r.t. $(res.conf)."
+    return( sa )
+end
+
+function Base.show(io::IO, res::RestrictMaximumDisplacements)
+    sa = string(res);       print(io, sa)
+end
+
+
+"""
+`struct  Basics.RestrictNoElectronsTo  <: AbstractConfigurationRestriction`   
+    ... restrict the number of electron in all shells with principal quantum number n >= nmin or orbital angular momentum l >= lmin 
+        to a total of ne electrons.
+
+    + ne            ::Int64     ... maximum number of (allowed) electrons in the specicied higher subshells.
+    + nmin          ::Int64     ... principal quantum number nmin.
+    + lmin          ::Int64     ... orbital angular momentum lmin.
+"""
+struct   RestrictNoElectronsTo  <: AbstractConfigurationRestriction
+    ne              ::Int64
+    nmin            ::Int64
+    lmin            ::Int64
+end
+
+
+function Base.string(res::RestrictNoElectronsTo)
+    sa = "Restrict to configurations with a maximum of $(res.ne) electrons in shells with n >= $(res.nmin) & l >= $(res.lmin)."
+    return( sa )
+end
+
+function Base.show(io::IO, res::RestrictNoElectronsTo)
+    sa = string(res);       print(io, sa)
+end
+
+
+"""
+`struct  Basics.RestrictParity  <: AbstractConfigurationRestriction`   
+    ... restrict to configurations with a given parity.
+
+    + parity        ::Basics.Parity   ... given parity.
+"""
+struct   RestrictParity  <: AbstractConfigurationRestriction
+    parity          ::Basics.Parity
+end
+
+
+function Base.string(res::RestrictParity)
+    sa = "Restrict to configurations with parity $(res.parity)."
+    return( sa )
+end
+
+function Base.show(io::IO, res::RestrictParity)
+    sa = string(res);       print(io, sa)
+end
+
+
+"""
+`struct  Basics.RestrictToShellDoubles  <: AbstractConfigurationRestriction`   
+    ... restrict to a double electron occupation in all shells with principal quantum number n >= nmin or orbital angular momentum l >= lmin. 
+
+    + nmin          ::Int64     ... principal quantum number nmin.
+    + lmin          ::Int64     ... orbital angular momentum lmin.
+"""
+struct   RestrictToShellDoubles  <: AbstractConfigurationRestriction
+    nmin            ::Int64
+    lmin            ::Int64
+end
+
+
+function Base.string(res::RestrictToShellDoubles)
+    sa = "Restrict to configurations with a double electron occupation in shells with n >= $(res.nmin) & l >= $(res.lmin)."
+    return( sa )
+end
+
+function Base.show(io::IO, res::RestrictToShellDoubles)
+    sa = string(res);       print(io, sa)
+end
+
+
+"""
+`struct  Basics.RequestMinimumOccupation  <: AbstractConfigurationRestriction`   
+    ... request a minimum occupation ne in the given (list of) shells. 
+
+    + ne            ::Int64           ... minimum electron occupation.
+    + shells        ::Array{Shell,1}  ... list of shells.
+"""
+struct   RequestMinimumOccupation  <: AbstractConfigurationRestriction
+    ne              ::Int64 
+    shells          ::Array{Shell,1}
+end
+
+
+function Base.string(res::RequestMinimumOccupation)
+    sa = "Request a minimum occupation of $(res.ne) electron in the (list of) shells $(res.shells)."
+    return( sa )
+end
+
+function Base.show(io::IO, res::RequestMinimumOccupation)
+    sa = string(res);       print(io, sa)
+end
+
+
+"""
+`struct  Basics.RequestMaximumOccupation  <: AbstractConfigurationRestriction`   
+    ... request a maximum occupation ne in the given (list of) shells. 
+
+    + ne            ::Int64           ... maximum electron occupation.
+    + shells        ::Array{Shell,1}  ... list of shells.
+"""
+struct   RequestMaximumOccupation  <: AbstractConfigurationRestriction
+    ne              ::Int64 
+    shells          ::Array{Shell,1}
+end
+
+
+function Base.string(res::RequestMaximumOccupation)
+    sa = "Request a maximum occupation of $(res.ne) electron in the (list of) shells $(res.shells)."
+    return( sa )
+end
+
+function Base.show(io::IO, res::RequestMaximumOccupation)
+    sa = string(res);       print(io, sa)
+end
+
+
+#################################################################################################################################
+#################################################################################################################################
+
+
+"""
+`abstract type Basics.AbstractConfigurationTheme` 
+    ... defines an abstract and a number of concrete (detailed and singleton) data types to distinguish a good number of concrete
+        themes for manipulating (list of) configurations. These themes are listed and briefly explained below; they typically provide
+        the data central to the particular theme, while other input for applying the theme is handled by multiple dispatch.
+
+    + AddElectrons            ... to add to the given configurations one or several electrons into specified shells.
+    + ExciteElectrons         ... to excite for the given configurations one or several electrons into specified shells.
+    + RemoveElectrons         ... to remove from the given configurations one or several electrons from specified shells.
+    + RestrictExcitations     ... to restrict the given configurations due to one or several configuration restrictions.
+    
+    + ForAutoIonization       ... to generate configurations that are related by autoionization (deexcitation + single remove).
+    + ForDielectronicCapture  ... to generate configurations that are related by dielectronic capture (excitation + single capture).
+    + ForElectronCapture      ... to generate configurations that are related by the capture of an additional electron.
+    + ForHollowIons           ... to generate configurations that are related by multiple capture into high-n shells.
+    + ForPhotoEmission        ... to generate configurations that are related by photoemission (single replacement of electrons).
+    + ForPhotoIonization      ... to generate configurations that are related by photoionization (single removement of electrons).
+    + ForPhotoRecombination   ... to generate configurations that are related by radiative capture (just single-electron capture).
+    + ForStepwiseDecay        ... to generate configurations that are related by photoemission and autoionization.
+    
+    + GroundConfiguration     ... to generate the ground configuration for a given number of electrons.
+    + MeanConfiguration       ... to generate the mean configuration, i.e. a configuration with mean occupation numbers.
+    + RelativisticConfigurations  to generate/deal with relativistic configurations.
+    + SuperConfiguration      ... to generate configurations from a given super-configuration.
+
+    + ByMultipoles            ... to extract the configurations due to multipole selection themes.
+    + ByParity                ... to extract the configurations due to parity.
+    + ClosedCore              ... to extract the closed core from the given configuration.
+    + ClosedShells            ... to extract the closed shells from given configurations.
+    + ClosedSubshells         ... to extract the closed subshells from given configurations.
+    + ContractShells          ... to extract the configurations without empty shell occupation (contracted shells).
+    + ExcitationLevel         ... to determine the excitation level of a configuration.
+    + ExpandShells            ... to extract the configurations with empty shell occupation (expanded shells).
+    + FromBasis               ... to extract the configuration from the basis.
+    + GeneralizedConfiguration .. to extract the generalized configuration.
+    + GetParity               ... to extract the parity of a configurations.
+    + IsOccupied              ... to extract where a shell or subshell is occupied in the given configuration.
+    + LeadingConfiguration    ... to extract the leading configuration.
+    + LeadingConfigurationR   ... to extract the leading relativistic configuration.
+    + MeanOccupation          ... to extract occupation numbers from given configurations.
+    + Multiplicity            ... to extract the multiplicity of a configuration.
+    + NonrelativisticBasis    ... to extract the configurations from a non-relativistic basis.
+    + NumberOfElectrons       ... to extract the number of electrons from a set of configurations.
+    + OccupationDifference    ... to extract differences of occupation numbers from given configurations.
+    + OpenShells              ... to extract the open shells from the given configurations.
+    + OpenSubshells           ... to extract the open subshells from the given configurations.
+    + TotalAM                 ... to extract the total angular momenta J that are associated with the configuration.
+    + ValenceOccupation       ... to extract the remaining configuration beyond a given (closed) core configuration.
+    
+    + FineStructure           ... to display the total J fine-structure levels a configuration (without energies).
+    + FineStructureLS         ... to display the total LSJ fine-structure levels a configuration (without energies).
+    + HundRules               ... to display the total LSJ fine-structure levels, ordered by Hund's themes.
+        
+"""
+abstract type  AbstractConfigurationTheme                                  end
+#
+#
+struct   ForAutoIonization              <:  AbstractConfigurationTheme     end
+struct   ForPhotoEmission               <:  AbstractConfigurationTheme     end
+struct   ForPhotoIonization             <:  AbstractConfigurationTheme     end
+#
+struct   MeanConfiguration              <:  AbstractConfigurationTheme     end
+struct   RelativisticConfigurations     <:  AbstractConfigurationTheme     end
+struct   SplitByEnerby                  <:  AbstractConfigurationTheme     end
+struct   SuperConfiguration             <:  AbstractConfigurationTheme     end
+#
+struct   ByMultipoles                   <:  AbstractConfigurationTheme     end
+struct   ClosedCore                     <:  AbstractConfigurationTheme     end
+struct   ClosedShells                   <:  AbstractConfigurationTheme     end
+struct   ClosedSubshells                <:  AbstractConfigurationTheme     end
+struct   ContractShells                 <:  AbstractConfigurationTheme     end
+struct   ExcitationLevel                <:  AbstractConfigurationTheme     end
+struct   FromBasis                      <:  AbstractConfigurationTheme     end
+struct   GeneralizedConfigurations      <:  AbstractConfigurationTheme     end
+struct   GetParity                      <:  AbstractConfigurationTheme     end 
+struct   IsOccupied                     <:  AbstractConfigurationTheme     end 
+struct   LeadingConfiguration           <:  AbstractConfigurationTheme     end
+struct   LeadingConfigurationR          <:  AbstractConfigurationTheme     end
+struct   MeanOccupation                 <:  AbstractConfigurationTheme     end
+struct   Multiplicity                   <:  AbstractConfigurationTheme     end
+struct   NonrelativisticBasis           <:  AbstractConfigurationTheme     end
+struct   NumberOfElectrons              <:  AbstractConfigurationTheme     end
+struct   OccupationDifference           <:  AbstractConfigurationTheme     end
+struct   OpenShellNumber                <:  AbstractConfigurationTheme     end
+struct   OpenShells                     <:  AbstractConfigurationTheme     end
+struct   OpenSubshells                  <:  AbstractConfigurationTheme     end
+struct   ValenceOccupation              <:  AbstractConfigurationTheme     end
+struct   ValenceShells                  <:  AbstractConfigurationTheme     end
+#
+struct   FineStructure                  <:  AbstractConfigurationTheme     end
+struct   FineStructureLS                <:  AbstractConfigurationTheme     end
+struct   HundsRules                     <:  AbstractConfigurationTheme     end
+
+export  AbstractConfigurationTheme, AddElectrons, ExciteElectrons, RemoveElectrons, RestrictExcitations,
+        ForAutoIonization, ForElectronCapture, ForDielectronicCapture, ForHollowIons, ForPhotoEmission, ForPhotoIonization, 
+        ForPhotoRecombination, ForRasExcitations, ForStepwiseDecay, GeneralizedConfigurations,
+        GroundConfiguration, MeanConfiguration, RelativisticConfigurations, 
+        SuperConfiguration,
+        ByParity, ByNumber, ByParity, ClosedCore, ClosedShells, ClosedSubshells, ContractShells, ExcitationLevel, 
+        ExpandShells, FromBasis, GetParity, IsOccupied, LeadingConfiguration, LeadingConfigurationR, 
+        MeanOccupation, Multiplicity, NonrelativisticBasis, NumberOfElectrons, OccupationDifference, OpenShellNumber, 
+        OpenShells, OpenSubshells, TotalAM, ValenceOccupation, ValenceShells,
+        FineStructure, FineStructureLS, HundsRules
+
+        
+"""
+`struct  Basics.AddElectrons          <:  AbstractConfigurationTheme`   
+    ... to add ne electrons in the intoshells for each of the given configurations. 
+
+    + ne             ::Int64            ... number of electrons to be added.
+    + intoShells     ::Array{Shell,1}   ... The shells into which the electrons are added.
+"""
+struct   AddElectrons                 <:  AbstractConfigurationTheme
+    ne               ::Int64           
+    intoShells       ::Array{Shell,1}
+end
+
+
+function Base.string(theme::Basics.AddElectrons)
+    sa = "AddElectrons theme with number of electrons ne=$(theme.ne) added into $(theme.intoShells)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.AddElectrons)
+    sa = string(theme);       print(io, sa)
+end
+
+        
+"""
+`struct  Basics.ByNumber              <:  AbstractConfigurationTheme`   
+    ... to select configurations due to given numbers of electrons. 
+
+    + NoElectrons    ::Array{Int64,1}   ... List of selected electron numbers
+"""
+struct   ByNumber                     <:  AbstractConfigurationTheme
+    NoElectrons      ::Array{Int64,1}           
+end
+
+
+function Base.string(theme::Basics.ByNumber)
+    sa = "ByNumber theme with selected numbers of electrons $(theme.NoElectrons)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.ByNumber)
+    sa = string(theme);       print(io, sa)
+end
+
+        
+"""
+`struct  Basics.ByParity              <:  AbstractConfigurationTheme`   
+    ... select configurations due to a given parity. 
+
+    + P              ::Basics.Parity  ... Selected parity.
+"""
+struct   ByParity                     <:  AbstractConfigurationTheme
+    P                ::Basics.Parity           
+end
+
+
+function Base.string(theme::Basics.ByParity)
+    sa = "ByParity theme with selected parity P=$(theme.P)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.ByParity)
+    sa = string(theme);       print(io, sa)
+end
+
+        
+"""
+`struct  Basics.ExciteElectrons       <:  AbstractConfigurationTheme`   
+    ... to excite ne electrons fromShells to the intoshells for each of the given configurations. 
+
+    + ne             ::Int64            ... number of electrons to be added.
+    + fromShells     ::Array{Shell,1}   ... The shells from which the electrons are excited.
+    + intoShells     ::Array{Shell,1}   ... The shells into which the electrons are excited.
+"""
+struct   ExciteElectrons              <:  AbstractConfigurationTheme
+    ne               ::Int64           
+    fromShells       ::Array{Shell,1}
+    intoShells       ::Array{Shell,1}
+end
+
+
+function Base.string(theme::Basics.ExciteElectrons)
+    sa = "ExciteElectrons theme with number of electrons ne=$(theme.ne) from $(theme.fromShells) into $(theme.intoShells)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.ExciteElectrons)
+    sa = string(theme);       print(io, sa)
+end
+
+        
+"""
+`struct  Basics.ExpandShells          <:  AbstractConfigurationTheme`   
+    ... expand a configuration with empty shells due to a given number of shells
+
+    + shells         ::Array{Shell,1}  ... Shells that will occur in the expanded form.
+"""
+struct   ExpandShells                 <:  AbstractConfigurationTheme
+    shells           ::Array{Shell,1}
+end
+
+
+function Base.string(theme::Basics.ExpandShells)
+    sa = "ExpandShells theme with shells=$(theme.shells)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.ExpandShells)
+    sa = string(theme);       print(io, sa)
+end
+
+        
+"""
+`struct  Basics.ForDielectronicCapture  <:  AbstractConfigurationTheme`   
+    ... to excite one electron fromShells to the toshells and add another electron into the intoShells
+        for each of the given configurations. 
+
+    + fromShells     ::Array{Shell,1}   ... The shells from which the electrons are excited from --> to.
+    + toShells       ::Array{Shell,1}   ... The shells to which the electrons are excited from --> to.
+    + intoShells     ::Array{Shell,1}   ... The shells into which the additional electron is captured.
+"""
+struct   ForDielectronicCapture         <:  AbstractConfigurationTheme
+    fromShells       ::Array{Shell,1}
+    toShells         ::Array{Shell,1}
+    intoShells       ::Array{Shell,1}
+end
+
+
+function Base.string(theme::Basics.ForDielectronicCapture)
+    sa = "ForDielectronicCapture theme with electron excitaton from $(theme.fromShells) to $(theme.toShells) " *
+         "as well as the capture of an additional electron into $(theme.intoShells)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.ForDielectronicCapture)
+    sa = string(theme);       print(io, sa)
+end
+  
+  
+"""
+`struct  Basics.ForElectronCapture      <:  AbstractConfigurationTheme`   
+    ... to add ne electrons in the intoshells for each of the given configurations. 
+
+    + intoShells     ::Array{Shell,1}   ... The shells into which the electrons are added.
+"""
+struct   ForElectronCapture             <:  AbstractConfigurationTheme
+    intoShells       ::Array{Shell,1}
+end
+
+
+function Base.string(theme::Basics.ForElectronCapture)
+    sa = "ForElectronCapture theme with one additional electron into $(theme.intoShells)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.ForElectronCapture)
+    sa = string(theme);       print(io, sa)
+end
+
+        
+"""
+`struct  Basics.ForHollowIons           <:  AbstractConfigurationTheme`   
+    ... to excite ne electrons fromShells to the intoshells for each of the given configurations. 
+
+    + ne             ::Int64            ... number of electrons to be captured.
+    + intoShells     ::Array{Shell,1}   ... The shells into which the electrons are captured
+    + decayShells    ::Array{Shell,1}   ... The shells which need to be considered between the shells of the ions and 
+                                            the intoShells in order to model the decay of hollow ions.
+"""
+struct   ForHollowIons                  <:  AbstractConfigurationTheme
+    ne               ::Int64           
+    intoShells       ::Array{Shell,1}
+    decayShells      ::Array{Shell,1}
+end
+
+
+function Base.string(theme::Basics.ForHollowIons)
+    sa = "ForHollowIons theme with number of electrons ne=$(theme.ne), the capture into into $(theme.intoShells) and " *
+         "the subsequent decay into $(theme.decayShells)"
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.ForHollowIons)
+    sa = string(theme);       print(io, sa)
+end
+  
+  
+"""
+`struct  Basics.ForPhotoRecombination   <:  AbstractConfigurationTheme`   
+    ... to add ne electrons in the intoshells for each of the given configurations. 
+
+    + intoShells     ::Array{Shell,1}   ... The shells into which the electrons are added.
+"""
+struct   ForPhotoRecombination          <:  AbstractConfigurationTheme
+    intoShells       ::Array{Shell,1}
+end
+
+
+function Base.string(theme::Basics.ForPhotoRecombination)
+    sa = "ForPhotoRecombination theme with one additional electron into $(theme.intoShells)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.ForPhotoRecombination)
+    sa = string(theme);       print(io, sa)
+end
+
+        
+"""
+`struct  Basics.ForRasExcitations       <:  AbstractConfigurationTheme`   
+    ... to excite ne electrons fromShells to the intoshells for each of the given configurations. 
+
+    + se             ::Bool             ... True if single excitations to be included, and false otherwise.
+    + de             ::Bool             ... True if double excitations to be included, and false otherwise.
+    + te             ::Bool             ... True if triple excitations to be included, and false otherwise.
+    + qe             ::Bool             ... True if quadruple excitations to be included, and false otherwise.
+    + fromShells     ::Array{Shell,1}   ... The shells from which the electrons are excited.
+    + intoShells     ::Array{Shell,1}   ... The shells into which the electrons are excited.
+"""
+struct   ForRasExcitations               <:  AbstractConfigurationTheme
+    se               ::Bool   
+    de               ::Bool   
+    te               ::Bool   
+    qe               ::Bool   
+    fromShells       ::Array{Shell,1}
+    intoShells       ::Array{Shell,1}
+end
+
+
+function Base.string(theme::Basics.ForRasExcitations)
+    sa = "ForRasExcitations theme with SDTQ = ($(theme.se), $(theme.de), $(theme.te), $(theme.qe)) and excitations " *
+         "from $(theme.fromShells) into $(theme.intoShells)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.ForRasExcitations)
+    sa = string(theme);       print(io, sa)
+end
+  
+  
+"""
+`struct  Basics.ForStepwiseDecay        <:  AbstractConfigurationTheme`   
+    ... to generate all those configurations that occur due to the stepwise photoemission 
+        autoionization of configurations with some inner-shell hole.
+
+    + maximallyReleased   ::Int64   ... Maximum number of electrons that can be released from the 
+                                        given configurations.
+"""
+struct   ForStepwiseDecay               <:  AbstractConfigurationTheme
+    maximallyReleased     ::Int64
+end
+
+
+function Base.string(theme::Basics.ForStepwiseDecay)
+    sa = "ForStepwiseDecay theme with the maximum number of released electrons $(theme.maximallyReleased)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.ForStepwiseDecay)
+    sa = string(theme);       print(io, sa)
+end
+
+        
+"""
+`struct  Basics.RemoveElectrons       <:  AbstractConfigurationTheme`   
+    ... to remove ne electrons fromShells for each of the given configurations. 
+
+    + ne             ::Int64            ... number of electrons to be added.
+    + fromShells     ::Array{Shell,1}   ... The shells from which the electrons are removed.
+"""
+struct   RemoveElectrons              <:  AbstractConfigurationTheme
+    ne               ::Int64           
+    fromShells       ::Array{Shell,1}
+end
+
+
+function Base.string(theme::Basics.RemoveElectrons)
+    sa = "RemoveElectrons theme with number of electrons ne=$(theme.ne) from $(theme.fromShells)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.RemoveElectrons)
+    sa = string(theme);       print(io, sa)
+end
+
+        
+"""
+`struct  Basics.RestrictExcitations   <:  AbstractConfigurationTheme`   
+    ... to restrict (reduce the number of) the given configurations by applying one or several configuration
+        restrictions. 
+
+    + ne             ::Int64                                       ... number of electrons to be added.
+    + fromShells     ::Array{Shell,1}                              ... The shells from which the electrons are excited.
+    + toShells       ::Array{Shell,1}                              ... The shells into which the electrons are excited.
+    + restrictions   ::Array{AbstractConfigurationRestriction,1}   ... set of restrictions that will be applied.
+"""
+struct   RestrictExcitations          <:  AbstractConfigurationTheme
+    ne               ::Int64        
+    fromShells       ::Array{Shell,1} 
+    toShells         ::Array{Shell,1} 
+    restrictions     ::Array{AbstractConfigurationRestriction,1}
+end
+
+
+"""
+`Basics.RestrictExcitations(restrictions::Array{AbstractConfigurationRestriction,1})`  
+    ... constructor to just provide a set of restriction.
+"""
+function Basics.RestrictExcitations(restrictions::Array{AbstractConfigurationRestriction,1})
+    Basics.RestrictExcitations(0, Shell[], Shell[], restrictions)
+end
+
+
+"""
+`Basics.RestrictExcitations(theme::Basics.ExciteElectrons, restrictions::Array{AbstractConfigurationRestriction,1})`  
+    ... constructor to specify the paraemterss by the ExciteElectron() theme.
+"""
+function Basics.RestrictExcitations(theme::Basics.ExciteElectrons, restrictions::Array{AbstractConfigurationRestriction,1})
+    Basics.RestrictExcitations(theme.ne, theme.fromShells, theme.intoShells, restrictions)
+end
+
+
+function Base.string(theme::Basics.RestrictExcitations)
+    sa = "RestrictExcitations theme with the excitation of $(theme.ne) electrons from $(theme.fromShells) " *
+         "to $(theme.toShells) and with the following $(length(theme.restrictions)) restriction:"
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.RestrictExcitations)
+    sa = string(theme);       print(io, sa)
+    for  restriction  in  theme.restrictions
+        print(io, restriction)
+    end
+end
+
+
+"""
+`struct  Basics.GroundConfiguration   <:  AbstractConfigurationTheme`   
+    ... to generate the ground configuration for a given (Z,N), i.e. the (nuclearCharge, NoElectrons). 
+
+    + Z             ::Float64         ... nuclear charge Z
+    + NoElectrons   ::Int64           ... number of electrons.
+"""
+struct   GroundConfiguration          <:  AbstractConfigurationTheme
+    Z               ::Float64
+    NoElectrons     ::Int64
+end
+
+
+function Base.string(theme::Basics.GroundConfiguration)
+    sa = "GroundConfiguration theme with charge Z=$(theme.Z) and NoElectrons=$(theme.NoElectrons)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.GroundConfiguration)
+    sa = string(theme);       print(io, sa)
+end
+
+
+"""
+`struct  Basics.TotalAM      <:  AbstractConfigurationTheme`   
+    ... to extract the total angular momenta (AM) to which the CSF of a configuration can couple. 
+
+    + allJ          ::Bool                  ... True, if all J-values (including multiple couplings) are to be returned, 
+                                                and false otherwise.
+    + totalJs       ::Array{AngularJ64,1}   ... Selected total angular momenta J.
+"""
+struct   TotalAM             <:  AbstractConfigurationTheme
+    allJ            ::Bool
+    totalJs         ::Array{AngularJ64,1}
+end
+
+
+function Base.string(theme::Basics.TotalAM)
+    sa = "Total angular momenta with allJ=$(theme.allJ) and totalJs=$(theme.totalJs)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.TotalAM)
+    sa = string(theme);       print(io, sa)
+end
+
+
+#################################################################################################################################
+#################################################################################################################################
+
+
+"""
 `abstract type Basics.AbstractContinuumSolutions` 
     ... defines an abstract and a number of singleton types for solving the continuum orbitals in a given potential.
 
