@@ -1,21 +1,4 @@
 
-#== August 2025, the following replacements need to be made and tested properly:
-++ Rename -inc-file ... into PhotoRecombination
-++ Replace here: 
-module-Cascade-inc-radiative-recombination.jl:`Cascade.generateConfigurationsForRadiativeRecombination(multiplets::Array{Multiplet,1},  scheme::RadiativeRecombinationScheme, 
-module-Cascade-inc-radiative-recombination.jl:function generateConfigurationsForRadiativeRecombination(multiplets::Array{Multiplet,1},  scheme::RadiativeRecombinationScheme, 
-module-Cascade-inc-radiative-recombination.jl:    wa  = Cascade.generateConfigurationsForRadiativeRecombination(multiplets, comp.scheme, comp.nuclearModel, comp.grid)
-
-++ Cascade.generateConfigurationsForRadiativeRecombination(multiplets::Array{Multiplet,1}, 
-    scheme::RadiativeRecombinationScheme, nm::Nuclear.Model, grid::Radial.Grid) ... generates all possible 
-    configurations due to radiative   recombination into the given multiplets. The number and type of such 
-    (singly-excited) configurations depend on the maximum principle and orbital angular quantum number of 
-    the additional intoShells, into which electrons are captured. A Tuple(initialConfList::Array{Configuration,1},
-    confList::Array{Configuration,1}) is returned.
-
-++ See Basics.generateConfigurations(ForPhotoRecombination(), confs)
-==#
-
 # Functions and methods for scheme::Cascade.RadiativeRecombinationScheme computations
 
 
@@ -36,7 +19,7 @@ function computeContinuumOrbitals(scheme::Cascade.RadiativeRecombinationScheme, 
     npot         = Nuclear.nuclearPotential(comp.nuclearModel, comp.grid)
     ## wp1 = compute("radial potential: core-Hartree", grid, wLevel)
     ## wp2 = compute("radial potential: Hartree-Slater", grid, wLevel)
-    wp           = Basics.computePotentialDFS(comp.grid, level)
+    wp           = Basics.computePotential(Basics.DFSField(1.0), comp.grid, level)
     pot          = Basics.add(npot, wp)
     #  Generate continuum orbitals
     for  (ie, en)  in  enumerate(enGrid.t)
@@ -88,7 +71,7 @@ function computeSteps(scheme::Cascade.RadiativeRecombinationScheme, comp::Cascad
         println(sa);    if  printSummary   println(iostream, sa)   end 
     end
     #
-    data = Cascade.RecombinationData(linesRR)
+    data = Cascade.Data{PhotoRecombination.Line}(linesRR)
 end
 
 
@@ -163,7 +146,7 @@ function generateBlocks(scheme::Cascade.RadiativeRecombinationScheme, comp::Casc
             ##x @show "aa1", subshellList
             Defaults.setDefaults("relativistic subshell list", subshellList; printout=printout)
             wa                 = BsplinesN.generatePrimitives(comp.grid)
-            hydrogenicOrbitals = BsplinesN.generateOrbitalsHydrogenic(wa, comp.nuclearModel, subshellList; printout=printout)
+            hydrogenicOrbitals = BsplinesN.generateOrbitalsHydrogenic(subshellList, comp.nuclearModel, wa; printout=printout)
         end
         
         for  (ia, confa)  in  enumerate(confs)
@@ -173,7 +156,8 @@ function generateBlocks(scheme::Cascade.RadiativeRecombinationScheme, comp::Casc
             # used also for all other blocks. In addition, a set of hydrogenic orbitals generated for later use
             if  ia == 1
                 ##x basis     = Basics.performSCF([confa], comp.nuclearModel, comp.grid, comp.asfSettings; printout=false)
-                basis     = SelfConsistent.performSCF([confa], comp.nuclearModel, comp.grid, comp.asfSettings; printout=false)
+                multiplet = SelfConsistent.performSCF([confa], comp.nuclearModel, comp.grid, comp.asfSettings; printout=false)
+                basis     = multiplet.levels[1].basis
             else
                 # Generate a list of relativistic configurations and determine an ordered list of subshells for these configurations
                 relconfList  = ConfigurationR[]
@@ -207,8 +191,9 @@ function generateBlocks(scheme::Cascade.RadiativeRecombinationScheme, comp::Casc
                 
                 basis         = Basis(true, confa.NoElectrons, subshellList, csfList, coreSubshellList, orbitals)
             end
-            multiplet = Basics.perform("computation: mutiplet from orbitals, no CI, CSF diagonal", [confa],  basis.orbitals, 
-                                        comp.nuclearModel, comp.grid, comp.asfSettings; printout=false)
+            ##x multiplet = Basics.perform("computation: mutiplet from orbitals, no CI, CSF diagonal", [confa],  basis.orbitals, 
+            ##x                             comp.nuclearModel, comp.grid, comp.asfSettings; printout=false)
+            multiplet = Hamiltonian.performCI(basis, comp.nuclearModel, comp.grid, comp.asfSettings, printout=false)
             push!( blockList, Cascade.Block(confa.NoElectrons, [confa], true, multiplet) )
             println("and $(length(multiplet.levels[1].basis.csfs)) CSF done. ")
         end
@@ -238,6 +223,7 @@ function generateBlocks(scheme::Cascade.RadiativeRecombinationScheme, comp::Casc
 end
 
 
+#==  August 2025, replaced by Basics.ForPhotoRecombination(), ...        
 """
 `Cascade.generateConfigurationsForRadiativeRecombination(multiplets::Array{Multiplet,1},  scheme::RadiativeRecombinationScheme, 
                                                             nm::Nuclear.Model, grid::Radial.Grid)`  
@@ -284,7 +270,7 @@ function generateConfigurationsForRadiativeRecombination(multiplets::Array{Multi
     end
 
     return( (initialConfList, newCaptureConfList) )
-end
+end ==#
 
 
 """
@@ -318,15 +304,22 @@ function perform(scheme::RadiativeRecombinationScheme, comp::Cascade.Computation
     if  printSummary   Cascade.displayLevels(iostream, multiplets, sa="initial ")                            end
     #
     # Generate subsequent cascade configurations as well as display and group them together
-    wa  = Cascade.generateConfigurationsForRadiativeRecombination(multiplets, comp.scheme, comp.nuclearModel, comp.grid)
+    ##x wa  = Cascade.generateConfigurationsForRadiativeRecombination(multiplets, comp.scheme, comp.nuclearModel, comp.grid)
+    ##x @show wa[1], wa[2]
+    ##x Basics.displayConfigurations(stdout, wa[1])
+    ##x Basics.displayConfigurations(stdout, wa[2])
+    initialConfigs  = Basics.extractConfigurations(Basics.FromMultiplet(), multiplets)
+    Basics.displayConfigurations(stdout, initialConfigs, details="initial configurations of the RR cascade ")
+    capturedConfigs = Basics.generateConfigurations(Basics.ForPhotoRecombination(comp.scheme.intoShells), initialConfigs)
+    Basics.displayConfigurations(stdout, capturedConfigs, details="final configurations of the RR cascade ")
     ##x wb1 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[1], sa="initial configurations of the RR cascade ")
     ##x wb2 = Cascade.groupDisplayConfigurationList(37., wa[2], sa="final configurations of the RR cascade ")  # Use Z such that no mean binding energy is computed.
-    wb1 = Basics.displayConfigurations(comp.nuclearModel.Z, wa[1], sa="initial configurations of the RR cascade ")
-    wb2 = Basics.displayConfigurations(37., wa[2], sa="final configurations of the RR cascade ")  # Use Z such that no mean binding energy is computed.
     #
     # Determine first all configuration 'blocks' and from them the individual steps of the cascade
-    wc1 = Cascade.generateBlocks(scheme, comp::Cascade.Computation, wb1)
-    wc2 = Cascade.generateBlocks(scheme, comp::Cascade.Computation, wb2, printout=false)
+    ##x wc1 = Cascade.generateBlocks(scheme, comp::Cascade.Computation, wb1)
+    ##x wc2 = Cascade.generateBlocks(scheme, comp::Cascade.Computation, wb2, printout=false)
+    wc1 = Cascade.generateBlocks(scheme, comp::Cascade.Computation, initialConfigs)
+    wc2 = Cascade.generateBlocks(scheme, comp::Cascade.Computation, capturedConfigs, printout=false)
     # Shift the initial level energy by -electronEnergyShift
     @show scheme.electronEnergyShift
     if  scheme.electronEnergyShift != 0. 

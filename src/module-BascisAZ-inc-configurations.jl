@@ -1,36 +1,70 @@
 
+export  checkConfigurations,  displayConfiguration,  displayConfigurations,  extractConfiguration,  extractConfigurations,  
+        extractFromConfiguration,  extractFromConfigurations,  generateConfiguration,  generateConfigurations
+
 
 """
-`Basics.displayConfigurations(stream::IO, theme::Basics.ByNumber, configs::Array{Configuration,1}; 
-                              details::String="", longForm::Bool=false)`  
-    ... display and summarize all configurations from the given list, ordered by the numbers of electrons.
-        The theme.NoElectrons remains unconsidered in this case.If not specified otherwise, these configurations 
-        are displayed in a compact form and nothing is returned in this case.
-        If details are given, they are printed as "... configurations for " * details * "and ne electrons:"
-        If longForm,  the full configurations are displayed with all shells; otherwise, the filled core-shells 
-        of all configurations are displayed separately and only the other shells are displayed explicitly.
-        longForm=false is suggested for medium and heavy elements.
+`Basics.checkConfigurations(theme::Basics.NumberOfElectrons, confs::Array{Configuration,1})`  
+    ... checks for and terminates with a comment, if not all the given configurations have the same number of 
+        electrons > 0.
 """
-function  Basics.displayConfigurations(stream::IO, theme::Basics.ByNumber, configs::Array{Configuration,1}; 
-                                       details::String="", longForm::Bool=false)
-    
-    for  no in theme.NoElectrons
-        newDetails = details * "and $no electrons"
-        selConfigs = Basics.extractConfigurations(Basics.ByNumber([no]), configs)
-        Basics.displayConfigurations(stream, selConfigs, details=newDetails, longForm=longForm)
+function  Basics.checkConfigurations(theme::Basics.NumberOfElectrons, confs::Array{Configuration,1})
+    was   = Basics.extractFromConfigurations(theme, confs)
+    wcs   = unique(was)
+    freqs = Dict(x => count(==(x), was) for x in unique(was))
+    wbs   = Int64[];   for (k,v) in freqs   push!(wbs, v)   end;    mbs = maximum(wbs) 
+    wa    = 0;         for (k,v) in freqs   if  freqs[k] == mbs     wa  = k;   break   end   end
+    # wa ... is the most frequent number of electrons
+    if  length(wcs) != 1
+        println("Configurations found with a different number of electron; problems may arise for:")
+        for  i = 1:length(was)
+            if  was[i] != wa    println("> $(confs[i])")   end 
+        end 
+        error("\n ... the executation terminates. ")
     end
     
     return( nothing )
-end
+end   
 
+    
+"""
+`Basics.checkConfigurations(theme::Basics.NumberOfElectrons, confs::Array{Configuration,1}, 
+                            confsMinus1::Array{Configuration,1})`  
+    ... checks for and terminates with a comment, if not all the given configurations have the same number of 
+        electrons > 0.
+"""
+function  Basics.checkConfigurations(theme::Basics.NumberOfElectrons, confs::Array{Configuration,1}, 
+                                     confsMinus1::Array{Configuration,1})
+    Basics.checkConfigurations(Basics.NumberOfElectrons(), confs)
+    Basics.checkConfigurations(Basics.NumberOfElectrons(), confsMinus1)
+    #
+    was = Basics.extractFromConfigurations(theme, confs);         was = unique(was)
+    wbs = Basics.extractFromConfigurations(theme, confsMinus1);   wbs = unique(wbs)
+
+    if  was[1] != wbs[1] + 1
+        println("Configurations number of electrons $(was[1]) != $(wbs[1]) + 1 are given; " *
+                "check for consistency with the given process.")
+        error("\n ... the executation terminates. ")
+    end
+    
+    return( nothing )
+end   
+
+
+#################################################################################################################################
+#################################################################################################################################
 
 """
-`Basics.displayConfiguration(stream::IO, theme::Basics.FineStructure, config::Configuration; details::String="")`  
+`Basics.displayConfiguration(stream::IO, theme::Basics.FineStructure, config::Configuration; 
+                             details::String="", header::Bool=true)`  
     ... displays ... the generated list of configurations in a compact form; nothing is returned in this case.
 """
-function  Basics.displayConfiguration(stream::IO, theme::Basics.FineStructure, config::Configuration; details::String="")
-    if  details == ""   println(stream,"  Fine-structure of configuration:")
-    else                println(stream,"  Fine-structure of configuration for $details:") 
+function  Basics.displayConfiguration(stream::IO, theme::Basics.FineStructure, config::Configuration; 
+                                      details::String="", header::Bool=true)
+    if  header
+        if  details == ""   println(stream,"  Fine-structure of configuration:")
+        else                println(stream,"  Fine-structure of configuration for $details:") 
+        end
     end
     
     totalJs = Basics.extractFromConfiguration(TotalAM(true, AngularJ64[]), config)
@@ -38,7 +72,7 @@ function  Basics.displayConfiguration(stream::IO, theme::Basics.FineStructure, c
     counts  = Dict{AngularJ64, Int}()
     for totalJ in totalJs     counts[totalJ] = get(counts, totalJ, 0) + 1   end
     
-    sa = "  " * string(config) * "  J's = "
+    sa = "    " * string(config) * "  J's = "
     for  tJ in tJs   sa = sa * string(tJ) * " ($(counts[tJ]))  "   end
     println(stream, sa)
 
@@ -47,13 +81,17 @@ end
 
 
 """
-`Basics.displayConfiguration(stream::IO, theme::Basics.FineStructureLS, config::Configuration; details::String="")`  
+`Basics.displayConfiguration(stream::IO, theme::Basics.FineStructureLS, config::Configuration; 
+                             details::String="", header::Bool=true)`  
     ... displays ... the generated list of configurations in a compact form; nothing is returned in this case.
 """
-function  Basics.displayConfiguration(stream::IO, theme::Basics.FineStructureLS, config::Configuration; details::String="")
-    if  details == ""   println(stream,"  LSJ-coupled fine-structure of configuration:")
-    else                println(stream,"  LSJ-coupled fine-structure of configuration for $details:") 
-    end
+function  Basics.displayConfiguration(stream::IO, theme::Basics.FineStructureLS, config::Configuration; 
+                                      details::String="", header::Bool=true)
+    if  header
+        if  details == ""   println(stream,"  LSJ-coupled fine-structure of configuration:")
+        else                println(stream,"  LSJ-coupled fine-structure of configuration for $details:") 
+        end
+    end 
     
     newTerms = Tuple{AngularJ64, AngularJ64}[];   currentTerms = [(AngularJ64(0), AngularJ64(0))]
     for  (shell, occ) in config.shells
@@ -201,6 +239,31 @@ function  Basics.displayConfigurations(stream::IO, configs::Array{Configuration,
     
     return( nothing )
 end
+
+    
+"""
+`Basics.displayConfigurations(stream::IO, theme::Basics.ByNumber, configs::Array{Configuration,1}; 
+                              details::String="", longForm::Bool=false)`  
+    ... display and summarize all configurations from the given list, ordered by the numbers of electrons.
+        The theme.NoElectrons remains unconsidered in this case.If not specified otherwise, these configurations 
+        are displayed in a compact form and nothing is returned in this case.
+        If details are given, they are printed as "... configurations for " * details * "and ne electrons:"
+        If longForm,  the full configurations are displayed with all shells; otherwise, the filled core-shells 
+        of all configurations are displayed separately and only the other shells are displayed explicitly.
+        longForm=false is suggested for medium and heavy elements.
+"""
+function  Basics.displayConfigurations(stream::IO, theme::Basics.ByNumber, configs::Array{Configuration,1}; 
+                                       details::String="", longForm::Bool=false)
+    
+    for  no in theme.NoElectrons
+        newDetails = details * "and $no electrons"
+        selConfigs = Basics.extractConfigurations(Basics.ByNumber([no]), configs)
+        Basics.displayConfigurations(stream, selConfigs, details=newDetails, longForm=longForm)
+    end
+    
+    return( nothing )
+end
+
 
 
 #################################################################################################################################
@@ -544,7 +607,7 @@ end
 
 
 """
-`Basics.extractConfigurations(theme::Basics.FromBasis, basis::Basis)  
+`Basics.extractConfigurations(theme::Basics.FromBasis, basis::Basis)`  
     ... extract all (non-relativistic) configurations that contribute to the given set of CSF in basis.csfs. 
         A confList::Array{Configuration,1} is returned.
 """
@@ -570,6 +633,32 @@ function Basics.extractConfigurations(theme::Basics.FromBasis, basis::Basis)
             if  conf in confList    continue;    else    push!( confList,  conf)    end
         end
     end 
+    
+    return( confList )
+end
+
+
+"""
+`Basics.extractConfigurations(theme::Basics.FromMultiplet, multiplet::Multiplet)`  
+    ... extract all (non-relativistic) configurations that contribute to the given multiplet. 
+        A confList::Array{Configuration,1} is returned.
+"""
+function Basics.extractConfigurations(theme::Basics.FromMultiplet, multiplet::Multiplet)  
+    confList = Basics.extractConfigurations(Basics.FromBasis(), multiplet.levels[1].basis)
+    
+    return( confList )
+end
+
+
+"""
+`Basics.extractConfigurations(theme::Basics.FromMultiplet, multiplets::Array{Multiplet,1})`  
+    ... extract all (non-relativistic) configurations that contribute to the given multiplets. 
+        A confList::Array{Configuration,1} is returned.
+"""
+function Basics.extractConfigurations(theme::Basics.FromMultiplet, multiplets::Array{Multiplet,1}) 
+    confList = Configuration[]
+    for multiplet in multiplets    append!(confList, Basics.extractConfigurations(Basics.FromBasis(), multiplet.levels[1].basis))   end 
+    confList = unique(confList)
     
     return( confList )
 end
@@ -679,6 +768,19 @@ end
 
 #################################################################################################################################
 #################################################################################################################################
+
+    
+"""
+`Basics.extractFromConfiguration(theme::Basics.AllShells, conf::Configuration)`  
+    ... extract all (occupied) shells from the given conf; a list::Array{Shell,1} is returned.
+"""
+function Basics.extractFromConfiguration(theme::Basics.AllShells, conf::Configuration)
+    shells    = Shell[]
+    for (shell, occ)  in  conf.shells   push!(shells, shell)   end
+    shells = sort(shells)
+    
+    return( shells )        
+end
 
     
 """
@@ -1025,6 +1127,22 @@ end
 
     
 """
+`Basics.extractFromConfigurations(theme::Basics.AllShells, confs::Array{Configuration,1})`  
+    ... extract all (occupied) shells from the given configurations; a list::Array{Shell,1} is returned.
+"""
+function Basics.extractFromConfigurations(theme::Basics.AllShells, confs::Array{Configuration,1})
+    shells    = Shell[]
+    for conf in confs
+       for (shell, occ)  in  conf.shells   if !(shell in shells)    push!(shells, shell)   end  end 
+    end 
+    shells = unique(shells)
+    shells = sort(shells)
+    
+    return( shells )        
+end
+
+    
+"""
 `Basics.extractFromConfigurations(theme::Basics.ClosedCore, confs::Array{Configuration,1})`  
     ... extract the (nonrelativistic) closed-core configuration that is common to all the given configurations confs; 
         a closedConf::Configuration is returned.
@@ -1109,14 +1227,14 @@ end
     
 """
 `Basics.extractFromConfigurations(theme::Basics.NumberOfElectrons, confs::Array{Configuration,1})`  
-    ... extract and uniques the number of electrons of all given configurations in a list::Array{Int64,1}.
+    ... extracts the number of electrons of all given configurations in a list::Array{Int64,1}.
         This list can readily be checked for different questions, for instance, that all configurations have
         the same number of electrons. A intList::Array{Int64,1} is returned.
 """
 function Basics.extractFromConfigurations(theme::Basics.NumberOfElectrons, confs::Array{Configuration,1})
     NoElectrons = Int64[]
     for  conf in confs    push!(NoElectrons, conf.NoElectrons)   end
-    NoElectrons = unique(NoElectrons)
+    ##x NoElectrons = unique(NoElectrons)
     
     return( NoElectrons )        
 end
@@ -1379,6 +1497,41 @@ end
 
 
 """
+`Basics.generateConfigurations(theme::Basics.ForDielectronicRecombination, confs::Array{Configuration,1})`  
+    ... generates a list of (non-relativistic) intermediate configurations in which an electron from the theme.fromShells 
+        is excited to the theme.toShells and an additional electron is capture into the theme.intoShells. For the final 
+        configurations, the decay of the toShells and addShells into the decayShells is considered.
+        The procedure terminates if (i) configurations with a different number of electrons are given or (ii) if the 
+        applied algorithm does not results in configurations with a proper number of electrons `relative' 
+        to the given ones. A tuple of two lists (intermediateConfs::Array{Configuration,1}, 
+        finalConfs::Array{Configuration,1}) is returned.
+"""
+function Basics.generateConfigurations(theme::Basics.ForDielectronicRecombination, confs::Array{Configuration,1})
+    ##x Replace in code: Basics.generateConfigurationsForExcitationScheme(confs::Array{Configuration,1}, 
+    ##x                         exScheme::Basics.ExciteByCapture, fromShells::Array{Shell,1}, toShells::Array{Shell,1}, 
+    #                         intoShells::Array{Shell,1}, noex::Int64)
+    # Replace in code: Cascade.generateConfigurationsForDielectronicCapture(multiplets::Array{Multiplet,1},  
+    #                          scheme::Cascade.DielectronicRecombinationScheme, nm::Nuclear.Model, grid::Radial.Grid)
+    #
+    intermediateConfs = Configuration[];    finalConfs = Configuration[]
+    #== Check that all configurations have the same number of electrons
+    wa = Basics.extractFromConfigurations(NumberOfElectrons(), confs)
+    if  length(wa) != 1   error("Configurations with different NoElectrons are given.")   else   noe = wa[1]    end 
+    
+    newConfs = Basics.generateConfigurations(ExciteElectrons(1, theme.fromShells, theme.toShells), confs);    @show "excite", newConfs
+    newConfs = Basics.generateConfigurations(AddElectrons(1, theme.intoShells), newConfs);                   @show "add",    newConfs
+    
+    # Check that all generated configurations have one electron less than given initially
+    wa = Basics.extractFromConfigurations(NumberOfElectrons(), newConfs)
+    if       length(wa) != 1     error("Configurations with different NoElectrons are generated.")   
+    elseif   wa[1] != noe + 1    error("Configurations with unexpected NoElectrons are generated.") 
+             Basics.displayConfigurations(stdout, newConfs)
+    end ==#
+    
+    return( (intermediateConfs, finalConfs) )
+end
+
+"""
 `Basics.generateConfigurations(theme::Basics.ForElectronCapture, confs::Array{Configuration,1})`  
     ... generates a list of non-relativistic configurations in which an additional electron is captured into one of the 
         theme.intoShells, so that each configuration has now one electron more. This is done for all given configurations.
@@ -1501,7 +1654,7 @@ function Basics.generateConfigurations(theme::Basics.ForPhotoEmission, confs::Ar
     newConfs = unique(newConfs)
     
     # Check that all generated configurations have one electron less than given initially
-    wa = Basics.extractFromConfigurations(NumberOfElectrons(), newConfs)
+    wa = Basics.extractFromConfigurations(NumberOfElectrons(), newConfs);    wa = unique(wa)
     if  length(wa) != 1   ||   wa[1] != noe        
         Basics.displayConfigurations(stdout, newConfs)
         error("Configurations with unexpected NoElectrons are generated.") 

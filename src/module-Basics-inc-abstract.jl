@@ -437,18 +437,23 @@ end
     
     + ForAutoIonization       ... to generate configurations that are related by autoionization (deexcitation + single remove).
     + ForDielectronicCapture  ... to generate configurations that are related by dielectronic capture (excitation + single capture).
+    + ForDielectronicRecombination     ... to compute the DR resonance strength (for pedestrians only).
     + ForElectronCapture      ... to generate configurations that are related by the capture of an additional electron.
+    + ForImpactIonization     ... to estimate electron impact-ionization cross sections (for pedestrians only)
     + ForHollowIons           ... to generate configurations that are related by multiple capture into high-n shells.
     + ForPhotoEmission        ... to generate configurations that are related by photoemission (single replacement of electrons).
     + ForPhotoIonization      ... to generate configurations that are related by photoionization (single removement of electrons).
     + ForPhotoRecombination   ... to generate configurations that are related by radiative capture (just single-electron capture).
     + ForStepwiseDecay        ... to generate configurations that are related by photoemission and autoionization.
+
+    + ForGivenConfigs         ... to perform computations for given configurations.
     
     + GroundConfiguration     ... to generate the ground configuration for a given number of electrons.
     + MeanConfiguration       ... to generate the mean configuration, i.e. a configuration with mean occupation numbers.
     + RelativisticConfigurations  to generate/deal with relativistic configurations.
     + SuperConfiguration      ... to generate configurations from a given super-configuration.
 
+    + AllShells               ... to extract all occupied shells from a set of configurations.
     + ByMultipoles            ... to extract the configurations due to multipole selection themes.
     + ByParity                ... to extract the configurations due to parity.
     + ClosedCore              ... to extract the closed core from the given configuration.
@@ -458,6 +463,7 @@ end
     + ExcitationLevel         ... to determine the excitation level of a configuration.
     + ExpandShells            ... to extract the configurations with empty shell occupation (expanded shells).
     + FromBasis               ... to extract the configuration from the basis.
+    + FromMultiplet           ... to extract the configuration from the multiplet(s).
     + GeneralizedConfiguration .. to extract the generalized configuration.
     + GetParity               ... to extract the parity of a configurations.
     + IsOccupied              ... to extract where a shell or subshell is occupied in the given configuration.
@@ -482,14 +488,18 @@ abstract type  AbstractConfigurationTheme                                  end
 #
 #
 struct   ForAutoIonization              <:  AbstractConfigurationTheme     end
+struct   ForImpactIonization            <:  AbstractConfigurationTheme     end
 struct   ForPhotoEmission               <:  AbstractConfigurationTheme     end
 struct   ForPhotoIonization             <:  AbstractConfigurationTheme     end
+
+struct   ForGivenConfigs                <:  AbstractConfigurationTheme     end
 #
 struct   MeanConfiguration              <:  AbstractConfigurationTheme     end
 struct   RelativisticConfigurations     <:  AbstractConfigurationTheme     end
 struct   SplitByEnerby                  <:  AbstractConfigurationTheme     end
 struct   SuperConfiguration             <:  AbstractConfigurationTheme     end
 #
+struct   AllShells                      <:  AbstractConfigurationTheme     end
 struct   ByMultipoles                   <:  AbstractConfigurationTheme     end
 struct   ClosedCore                     <:  AbstractConfigurationTheme     end
 struct   ClosedShells                   <:  AbstractConfigurationTheme     end
@@ -497,6 +507,7 @@ struct   ClosedSubshells                <:  AbstractConfigurationTheme     end
 struct   ContractShells                 <:  AbstractConfigurationTheme     end
 struct   ExcitationLevel                <:  AbstractConfigurationTheme     end
 struct   FromBasis                      <:  AbstractConfigurationTheme     end
+struct   FromMultiplet                  <:  AbstractConfigurationTheme     end
 struct   GeneralizedConfigurations      <:  AbstractConfigurationTheme     end
 struct   GetParity                      <:  AbstractConfigurationTheme     end 
 struct   IsOccupied                     <:  AbstractConfigurationTheme     end 
@@ -522,8 +533,8 @@ export  AbstractConfigurationTheme, AddElectrons, ExciteElectrons, RemoveElectro
         ForPhotoRecombination, ForRasExcitations, ForStepwiseDecay, GeneralizedConfigurations,
         GroundConfiguration, MeanConfiguration, RelativisticConfigurations, 
         SuperConfiguration,
-        ByParity, ByNumber, ByParity, ClosedCore, ClosedShells, ClosedSubshells, ContractShells, ExcitationLevel, 
-        ExpandShells, FromBasis, GetParity, IsOccupied, LeadingConfiguration, LeadingConfigurationR, 
+        AllShells, ByNumber, ByParity, ClosedCore, ClosedShells, ClosedSubshells, ContractShells, ExcitationLevel, 
+        ExpandShells, FromBasis, FromMultiplet, GetParity, IsOccupied, LeadingConfiguration, LeadingConfigurationR, 
         MeanOccupation, Multiplicity, NonrelativisticBasis, NumberOfElectrons, OccupationDifference, OpenShellNumber, 
         OpenShells, OpenSubshells, TotalAM, ValenceOccupation, ValenceShells,
         FineStructure, FineStructureLS, HundsRules
@@ -665,7 +676,38 @@ end
 function Base.show(io::IO, theme::Basics.ForDielectronicCapture)
     sa = string(theme);       print(io, sa)
 end
-  
+
+        
+"""
+`struct  Basics.ForDielectronicRecombination     <:  AbstractConfigurationTheme`   
+    ... to excite one electron fromShells to the toshells and add another electron into the intoShells
+        for each of the given configurations. The subsequent stabiliztion is considered into the 
+            decayShells.
+
+    + fromShells     ::Array{Shell,1}   ... The shells from which the electrons are excited from --> to.
+    + toShells       ::Array{Shell,1}   ... The shells to which the electrons are excited from --> to.
+    + intoShells     ::Array{Shell,1}   ... The shells into which the additional electron is captured.
+    + decayShells    ::Array{Shell,1}   ... The shells into which (radiative) stabilization occurs.
+"""
+struct   ForDielectronicRecombination           <:  AbstractConfigurationTheme
+    fromShells       ::Array{Shell,1}
+    toShells         ::Array{Shell,1}
+    intoShells       ::Array{Shell,1}
+    decayShells      ::Array{Shell,1}
+end
+
+
+function Base.string(theme::Basics.ForDielectronicRecombination)
+    sa = "ForDielectronicRecombination theme with electron excitaton from $(theme.fromShells) to $(theme.toShells), " *
+         "together with the capture of an additional electron into $(theme.intoShells) " *
+        "\nand the (raditive) stabilization in the $(theme.decayShells)."
+    return( sa )
+end
+
+function Base.show(io::IO, theme::Basics.ForDielectronicRecombination)
+    sa = string(theme);       print(io, sa)
+end  
+
   
 """
 `struct  Basics.ForElectronCapture      <:  AbstractConfigurationTheme`   

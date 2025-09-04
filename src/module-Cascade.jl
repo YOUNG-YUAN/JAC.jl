@@ -1180,7 +1180,7 @@ include("module-Cascade-inc-impact-ionization.jl")
 include("module-Cascade-inc-photoabsorption.jl")
 include("module-Cascade-inc-photoexcitation.jl")
 include("module-Cascade-inc-photoionization.jl")
-include("module-Cascade-inc-radiative-recombination.jl")
+include("module-Cascade-inc-photorecombination.jl")
 include("module-Cascade-inc-stepwise-decay.jl")
 include("module-Cascade-inc-simulations.jl")
 

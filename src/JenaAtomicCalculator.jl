@@ -48,24 +48,26 @@ using  Dates,  Printf,  BSplineKit, LinearAlgebra, SpecialFunctions, QuadGK, Cub
 
 export AbstractCImethod, AbstractConfigurationRestriction, AbstractEeInteraction, AbstractPotential, AbstractQedModel, AbstractStartOrbitals,
        AbstractProcessSettings, AbstractEmpiricalSettings, AbstractPlasmaModel, AbstractPropertySettings, AbstractLineShiftSettings,
-       add, AlphaX, AlphaVariation, analyze, AnapoleMoment, 
+       add, AlphaX, AllShells, AlphaVariation, analyze, AnapoleMoment, 
        AngularJ64, AngularM64, AngularJ, AngularMomentum, AddElectrons, 
        AsfSettings, Atomic, AtomicState, AtomicStructure, Auger, AugerInPlasma, AutoIonization, AverageAtom, AtomicCompass,
        Basics, Basis, Beam, BeamPhotoExcitation, BreitInteraction, Bsplines, BsplinesN, ByMultipoles, ByNumber, ByParity, 
        CartesianVector, Cartesian2DFieldVector, Cartesian3DFieldVector, CiSettings, CiExpansion, ClebschGordan, CloseCoupling, 
        compute, convertUnits, Compton, Configuration, ConfigurationR, 
        Cascade, Continuum, CorePolarization, Coulex, CoulombExcitation, Coulion, CoulombBreit, CoulombGaunt, 
-       CoulombInteraction, CoulombIonization, CsfR, ClosedCore, ClosedShells, ClosedSubshells, ContractShells,      
+       CoulombInteraction, CoulombIonization, CsfR, ClosedCore, ClosedShells, ClosedSubshells, ContractShells, checkConfigurations,
+       computeCrossSections,  computeForPedestrians,  computeLevelEnergies,  computeLifetimes,  computeResonanceStrength, computeTransitionRates, 
        diagonalize, Defaults, DecayYield, DielectronicRecombination, Dierec, Djpq, DoubleAutoIonization, DoubleAuger, 
-       DiagonalCoulomb, DefaultQuantizationAxis, 
+       DiagonalCoulomb, DefaultQuantizationAxis, displayCouplings, displayConfiguration,  displayConfigurations,
        Eimex, ElectronCapture, ElecCapture, estimate, ElectricDipoleMoment, Einstein, EinsteinX, EmMultipole, evaluate, ExpStokes, 
-       Empirical, ExciteElectrons, ExcitationLevel, ExpandShells, 
+       Empirical, ExciteElectrons, ExcitationLevel, ExpandShells, estimateCrossSections, extractConfiguration,  extractConfigurations,  
+       extractFromConfiguration, extractFromConfigurations,
        E1, M1, E2, M2, E3, M3, E4, M4,
        FormFactor, FormF, FullCIeigen,
-       ForAutoIonization, ForDielectronicCapture, ForElectronCapture, ForHollowIons, ForPhotoEmission, ForPhotoIonization,
-       ForPhotoRecombination, ForRasExcitations, ForStepwiseDecay, FineStructure, FineStructureLS, FromBasis, 
+       ForAutoIonization, ForDielectronicCapture, ForDielectronicRecombination, ForElectronCapture, ForHollowIons, ForImpactIonization, 
+       ForPhotoEmission, ForPhotoIonization, ForPhotoRecombination, ForRasExcitations, ForStepwiseDecay, FineStructure, FineStructureLS, FromBasis, 
        generate, GreenSettings, GreenChannel, GreenExpansion, getDefaults, Green, Gui, GroundConfiguration, GeneralizedConfigurations,
-       GetParity,
+       GetParity, generateConfiguration, generateConfigurations,
        Hamiltonian, Hfs, HyperfineInduced, HighHarmonic, HFS, HydrogenicIon, HarmonicQuantizationAxis, HundsRules,
        interpolate, integrate, Integral, ImpactExcAuto, ImpactExcitation, ImpactExcitationAutoion, ImpactIonization, 
        InteractionStrength, InternalConv, InternalConversion, InternalRecombination, Isotope, IsotopeShift, IsotopicFraction, IsOccupied,
@@ -215,6 +217,7 @@ include("module-Empirical.jl");         using ..Empirical
 
 # Functions/methods for atomic computations
 include("module-Atomic.jl");            using ..Atomic
+include("module-ForPedestrians.jl");    using ..ForPedestrians
 
 if  incPlasma
 # Functions/methods for plasma computations

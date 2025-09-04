@@ -86,6 +86,9 @@ GBL_RATE_UNIT                = "1/s"
 GBL_STRENGTH_UNIT            = "cm^2 eV"
 GBL_TIME_UNIT                = "sec"
 
+GBL_NUCLEAR_CHARGE           = 1.0
+GBL_NUCLEAR_MODEL            = missing
+
 GBL_PRINT_DATA               = false
 GBL_PRINT_SUMMARY            = false
 GBL_PRINT_TEST               = false
@@ -365,6 +368,9 @@ end
     ... to define a method for the normalization of the continuum orbitals as asymptotically (pure) sine or Coulomb 
         functions, or following the procedure by Ong & Russek (1978).
 
++ `("nuclear: charge", Z::Float64)`  or  `("nuclear: model", nm::Any")`   
+    ... to define the nuclear charge or nuclear model for the pedestrian approach to atomic computations.
+
 + `("QED model: Petersburg")`  or  `("QED model: Sydney")`   
     ... to define a model for the computation of the QED corrections following the work by Shabaev et al. (2011; Petersburg) 
         or Flambaum and Ginges (2004; Syney).
@@ -480,6 +486,26 @@ function setDefaults(sa::String, sb::String)
 end
 
 
+function setDefaults(sa::String, Z::Float64)
+
+    if        sa == "nuclear: charge"      global GBL_NUCLEAR_CHARGE = Z
+    else      error("Unsupported keystring:: $sa")
+    end
+
+    nothing
+end
+
+
+function setDefaults(sa::String, nm::Any)
+
+    if        sa == "nuclear: model"      global GBL_NUCLEAR_MODEL = nm
+    else      error("Unsupported keystring:: $sa")
+    end
+
+    nothing
+end
+
+
 """
 + `("relativistic subshell list", subshells::Array{Subshell,1}; printout::Bool=true)`  
     ... to (pre-) define internally the standard relativistic subshell list on which the standard order of orbitals is based.
@@ -572,6 +598,9 @@ end
 
 + `("electron g-factor")`  ... to give the electron g-factor g_s = 2.00232.
 
++ `("nuclear: charge")`  or  `("nuclear: model")` 
+    ... to get the nuclear charge or model, if it has been set before.
+
 + `("unit: energy")`  or  `("unit: cross section")`  or  `("unit: rate")`  or  `("unit: strength")`  or  `("unit: time")`  
     ... to get the corresponding (user-defined) unit::String for the current computations.
 
@@ -595,6 +624,8 @@ function getDefaults(sa::String)
     elseif    sa == "framework"                                         return (GBL_FRAMEWORK)
     elseif    sa == "method: continuum"                                 return (GBL_CONTINUUM)
     elseif    sa in ["electron rest energy", "mc^2"]                    return (1/(FINE_STRUCTURE_CONSTANT^2))   
+    elseif    sa == "nuclear: charge"                                   return (GBL_NUCLEAR_CHARGE)
+    elseif    sa == "nuclear: model"                                    return (GBL_NUCLEAR_MODEL)
     elseif    sa == "unit: energy"                                      return (GBL_ENERGY_UNIT)
     elseif    sa == "unit: cross section"                               return (GBL_CROSS_SECTION_UNIT)
     elseif    sa == "unit: energy-diff. cross section"                  return (GBL_EDIFF_CROSS_SECTION_UNIT)

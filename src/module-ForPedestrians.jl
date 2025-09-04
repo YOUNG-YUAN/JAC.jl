@@ -1,0 +1,659 @@
+
+"""
+`module  ForPedestrians`  
+	... a submodel of JAC that comprises all functions to support a "pedestrian approach" to atomic computations.
+	    The idea of this approach is to provide a set of very simple functions, i.e. of functions with simplified argument 
+	    lists, in order to encourage useful computations. Other information, which is needed for such computation,
+        are provided as defaults. This approach also provides a number of explanations and hints, how more advanced 
+        computations can be carried out by means of the JAC toolbox.
+        
+        We hope and expect to add further functionality to this "pedestrian approach" but without giving up the basic
+        idea to KISS: Keep Input Short and Simple.
+"""
+module ForPedestrians
+
+
+using  Printf, ..AngularMomentum, ..Atomic, ..AutoIonization, ..Basics, ..Defaults, ..ImpactIonization, 
+               ..ManyElectron,  ..Nuclear, ..PhotoEmission, ..PhotoIonization, ..Radial
+
+export computeCrossSections,  computeForPedestrians, computeLevelEnergies,  computeLifetimes,  computeResonanceStrength,
+       computeTransitionRates,  displayCouplings,  estimateCrossSections
+
+
+       
+"""
+`ForPedestrians.computeCrossSections(theme::Basics.ForPhotoIonization, initialConfigs::Array{Configuration,1},
+                                     finalConfigs::Array{Configuration,1};
+                                     grid::Radial.Grid=Radial.Grid(), asfSettings::AsfSettings=AsfSettings(),
+                                     printout::Bool=false)` 
+    ... computes the photoionization cross sections for all levels that are defined by the given initial and final 
+        configurations. The default settings of the grid and asfSettings are used but can be overwritten on demand.
+        The results are printed to screen but nothing is returned otherwise.
+        
+        Simplified call:   setDefaults("nuclear: charge", 10.0)
+                           initialConfigs = [Configuration("[Ne]")]
+                           finalConfigs   = [Configuration("[He] 2s 2p^6"), Configuration("[He] 2s^2 2p^5")]
+                           computeCrossSections(Basics.ForPhotoIonization(), initialConfigs, finalConfigs)
+"""
+function computeCrossSections(theme::Basics.ForPhotoIonization, initialConfigs::Array{Configuration,1},
+                              finalConfigs::Array{Configuration,1};
+                              grid::Radial.Grid=Radial.Grid(), asfSettings::AsfSettings=AsfSettings(),
+                              printout::Bool=false)
+    Basics.checkConfigurations(Basics.NumberOfElectrons(), initialConfigs, finalConfigs)
+    # Collect explanations
+    configs = copy(initialConfigs);    append!(configs, finalConfigs)
+    Basics.displayConfigurations(stdout, configs, details = "photoionization computations")
+        
+    sa =    "\n* Compute the photoionization cross sections between all levels from the given initial and final configurations above; " *
+            "the following assumptions/simplifications are made: " *
+            "\n    + All photoionization cross sections are based on the electric-dipole (E1) approximation only. " *
+            "\n    + Use the optional argument  printout = true  to generate intermediate printout." *
+            "\n    + Use the optional argument  grid = Radial.Grid(...)  to refine the radial grid, if needed." *
+            "\n    + For more elaborate computations, make use of perform(comp::Atomic.Computation) " *
+            "\n    + Call ? Atomic.Computation for further details. " *
+            "\n    + Call ? setDefaults ... to define user-specified units for the computations. "
+    println(sa)
+    
+    # Determine a useful grid
+    if      grid.NoPoints == 0    currentGrid = Radial.Grid(Radial.Grid(false), rnt = 1.0e-5, h = 5.0e-2, hp = 2.0e-2, rbox = 15.0)
+    else                          currentGrid = grid
+    end
+    
+    photoSettings = PhotoIonization.Settings(PhotoIonization.Settings(), printBefore =true, photonEnergies = [2.0^(i-1) for i=1:12],
+                                             lValues = [0, 1, 2, 3])
+     
+    # Specify the atomic computations
+    function atomic_code()    
+        Defaults.setDefaults("standard grid", currentGrid)
+        Z = Defaults.getDefaults("nuclear: charge")
+        
+        comp = Atomic.Computation(Atomic.Computation(), name="Photoionization cross sections",  
+                                  grid=currentGrid, nuclearModel=Nuclear.Model(Z);
+                                  initialConfigs = initialConfigs, finalConfigs = finalConfigs, 
+                                  processSettings = photoSettings ); 
+        results = perform(comp, output=true)
+        return( results )
+    end
+    
+    # Print or suppress the standard output
+    if    printout  atomic_code()
+    else  
+          results = redirect_stdout(devnull) do   
+                       atomic_code()  end
+          photoLines = results["photoionization lines:"]
+          PhotoIonization.displayResults(stdout, photoLines, photoSettings)
+    end
+        
+    return( nothing )
+end 
+            
+
+#################################################################################################################################
+#################################################################################################################################
+
+
+"""
+`ForPedestrians.computeForPedestrians()` 
+    ... computes with simplified input different excitation and ionization cross sections
+"""
+function computeForPedestrians()
+        
+    sa =    "\n* We here provide a simple-man's (pedestrian) approach to the computation of atomic level energies, transition rates " *
+            "and cross sections of various kind: \n" *
+            "\n    + Useful functions are:  computeLevelEnergies(...),  computeCrossSections(...),  computeTransitionRates(...),  " *
+            "\n                             displayCoulings(...), estimateCrossSections(...)." *
+            "\n    + Call ? computeLevelEnergies  ... for an example, the argument and further details. " *
+            "\n    + For more elaborate computations, make use of perform(comp::Atomic.Computation) " *
+            "\n    " *
+            "\n    + Call ? setDefaults ... to define user-specified units for the computations. " *
+            "\n    + Call setDefaults(``nuclear: charge'', Z::Float64) ... to define the nuclear charge Z. " *
+            "\n    " *
+            "\n    + For more elaborate atomic computations, make use of perform(comp::Atomic.Computation) " *
+            "\n    + Call ? Atomic.Computation for further details. " *
+            "\n    + For more elaborate cascade or plasma computations, make use of perform(comp::Atomic.Computation) or " *
+            "\n    + perform(comp::Plasma.Computation), respectively. " *
+            "\n    + Call ? Cascade.Computation  or  ? Plasma.Computation  for further details. " *
+            "\n    " *
+            "\n    + For the algebraic simplification of formal expressions from Racah's algebra, call ? RacahAlgebra.RacahExpression  and " *
+            "\n      ? RacahAlgebra.evaluate for further details. " *
+            "\n    " *
+            "\n    + Donate properly with a reference to: _S. Fritzsche, Comp. Phys. Commun. 240, 1–14 (2019). "
+    println(sa)
+    return( nothing )
+end 
+
+
+
+#################################################################################################################################
+#################################################################################################################################
+
+
+"""
+`ForPedestrians.computeLevelEnergies(theme::Basics.ForGivenConfigs, configs::Array{Configuration,1};
+                                     grid::Radial.Grid=Radial.Grid(true), asfSettings::AsfSettings=AsfSettings(),
+                                     printout::Bool=false)` 
+    ... computes the level energies and leading configurations for all levels that are defined by the given configurations.
+        The default values of the grid and asfSettings are used but can be overwritten on demand.
+        The results are printed to screen but nothing is returned otherwise.
+        
+        Simplified call:   setDefaults("nuclear: charge", 10.0)
+                           configs = [Configuration("[Ne]"), Configuration("[He] 2s^2 2p^5 3s")]
+                           computeLevelEnergies(Basics.ForGivenConfigs(), configs)
+"""
+function computeLevelEnergies(theme::Basics.ForGivenConfigs, configs::Array{Configuration,1};
+                              grid::Radial.Grid=Radial.Grid(true), asfSettings::AsfSettings=AsfSettings(),
+                              printout::Bool=false)
+    Basics.checkConfigurations(Basics.NumberOfElectrons(), configs)
+    # Collect explanations
+    Basics.displayConfigurations(stdout, configs, details = "energy level computations")
+        
+    sa =    "\n* Compute the level energies for all levels of the configurations above; " *
+            "the following assumptions/simplifications are made: " *
+            "\n    + All level energies are based on the Dirac-Coulomb Hamiltonian only. " *
+            "\n    + Use the optional argument  printout = true  to generate intermediate printout." *
+            "\n    + Use the optional argument  grid = Radial.Grid(...)  to refine the radial grid, if needed." *
+            "\n    + For more elaborate computations, make use of perform(comp::Atomic.Computation) " *
+            "\n    + Call ? Atomic.Computation for further details. " *
+            "\n    + Call ? setDefaults ... to define user-specified units for the computations. "
+    println(sa)
+    
+    # Specify the atomic computations
+    function atomic_code()
+        Defaults.setDefaults("standard grid", grid)
+        Z    = Defaults.getDefaults("nuclear: charge")
+        
+        comp = Atomic.Computation(Atomic.Computation(), name="Level energies",  
+                                  grid=grid, nuclearModel=Nuclear.Model(Z), configs = configs); 
+        results = perform(comp, output=true)
+        return( results )
+    end
+    
+    # Print or suppress the standard output
+    if    printout  atomic_code()
+    else  
+          results = redirect_stdout(devnull) do   
+                       atomic_code()  end
+          multiplet = results["multiplet:"]
+          Basics.displayLevels(stdout, [multiplet]; N=200) 
+    end
+    
+    return( nothing )
+end 
+
+
+#################################################################################################################################
+#################################################################################################################################
+
+
+"""
+`ForPedestrians.computeLifetimes(theme::Basics.ForPhotoEmission, configs::Array{Configuration,1};
+                                 grid::Radial.Grid=Radial.Grid(true), asfSettings::AsfSettings=AsfSettings(),
+                                 printout::Bool=false)` 
+    ... computes the radiative lifetimes of all levels that are defined by the given configurations.
+        The default values of the grid and asfSettings are used but can be overwritten on demand.
+        The results are printed to screen but nothing is returned otherwise.
+        
+        Simplified call:   setDefaults("nuclear: charge", 10.0)
+                           configs = [Configuration("1s 2s^2 2p^6")]
+                           computeLifetimes(Basics.ForPhotoEmission(), configs)
+"""
+function computeLifetimes(theme::Basics.ForPhotoEmission, configs::Array{Configuration,1};
+                          grid::Radial.Grid=Radial.Grid(true), asfSettings::AsfSettings=AsfSettings(),
+                          printout::Bool=false)
+    Basics.checkConfigurations(Basics.NumberOfElectrons(), configs)
+    # Collect explanations
+    Basics.displayConfigurations(stdout, configs, details = "radiative lifetime computations")
+        
+    sa =    "\n* Compute the radiative lifetimes for all levels of the configurations above; " *
+            "the following assumptions/simplifications are made: " *
+            "\n    + Lifetimes are calculated for levels with inner-shell holes (at least, one sub-valence hole) only." *
+            "\n    + All radiative lifetimes are based on the electric-dipole (E1) approximation only. " *
+            "\n    + Use the optional argument  printout = true  to generate intermediate printout." *
+            "\n    + Use the optional argument  grid = Radial.Grid(...)  to refine the radial grid, if needed." *
+            "\n    + For more elaborate computations, make use of perform(comp::Atomic.Computation) " *
+            "\n    + Call ? Atomic.Computation for further details. " *
+            "\n    + Call ? setDefaults ... to define user-specified units for the computations. "
+    println(sa)
+    
+    photoSettings = PhotoEmission.Settings(PhotoEmission.Settings(), multipoles=[E1], gauges=[UseCoulomb, UseBabushkin], 
+                                           printBefore=true)
+     
+    # Specify the atomic computations
+    function atomic_code()        
+        Defaults.setDefaults("standard grid", grid)
+        Z             = Defaults.getDefaults("nuclear: charge")
+        finalConfigs  = Basics.generateConfigurations(Basics.ForPhotoEmission(), configs)
+       
+        comp = Atomic.Computation(Atomic.Computation(), name="PhotoEmission (radiative) lifetimes",  
+                                  grid=grid, nuclearModel=Nuclear.Model(Z);
+                                  initialConfigs = configs, finalConfigs = finalConfigs, 
+                                  processSettings = photoSettings ); 
+        results = perform(comp, output=true)
+        return( results )
+    end
+    
+    # Print or suppress the standard output
+    if    printout  atomic_code()
+    else  
+          results = redirect_stdout(devnull) do   
+                       atomic_code()  end
+          lines = results["radiative lines:"]
+          PhotoEmission.displayLifetimes(stdout, lines, photoSettings)
+    end
+    
+    return( nothing )
+end 
+
+
+"""
+`ForPedestrians.computeLifetimes(theme::Basics.ForAutoIonization, configs::Array{Configuration,1};
+                                 grid::Radial.Grid=Radial.Grid(), asfSettings::AsfSettings=AsfSettings(),
+                                 printout::Bool=false)` 
+    ... computes the non-radiative (Auger) lifetimes of all levels that are defined by the given configurations.
+        The default values of the grid and asfSettings are used but can be overwritten on demand.
+        The results are printed to screen but nothing is returned otherwise.
+        
+        Simplified call:   setDefaults("nuclear: charge", 10.0)
+                           configs = [Configuration("1s 2s^2 2p^6")]
+                           computeLifetimes(Basics.ForAutoIonization(), configs)
+"""
+function computeLifetimes(theme::Basics.ForAutoIonization, configs::Array{Configuration,1};
+                          grid::Radial.Grid=Radial.Grid(), asfSettings::AsfSettings=AsfSettings(),
+                          printout::Bool=false)
+    Basics.checkConfigurations(Basics.NumberOfElectrons(), configs)
+    # Collect explanations
+    Basics.displayConfigurations(stdout, configs, details = "Auger lifetime computations")
+        
+    sa =    "\n* Compute the non-radiative (Auger) lifetimes for all levels of the configurations above; " *
+            "the following assumptions/simplifications are made: " *
+            "\n    + All Auger lifetimes are based on the instantaneous Coulomb Interaction. " *
+            "\n    + Use the optional argument  printout = true  to generate intermediate printout." *
+            "\n    + Use the optional argument  grid = Radial.Grid(...)  to refine the radial grid, if needed." *
+            "\n    + For more elaborate computations, make use of perform(comp::Atomic.Computation) " *
+            "\n    + Call ? Atomic.Computation for further details. " *
+            "\n    + Call ? setDefaults ... to define user-specified units for the computations. "
+    println(sa)
+    
+    # Determine a useful grid
+    if      grid.NoPoints == 0    currentGrid = Radial.Grid(Radial.Grid(false), rnt = 1.0e-5, h = 5.0e-2, hp = 2.0e-2, rbox = 15.0)
+    else                          currentGrid = grid
+    end
+    
+    # Specify the atomic computations
+    function atomic_code()        
+        Defaults.setDefaults("standard grid", currentGrid)
+        Z             = Defaults.getDefaults("nuclear: charge")
+        finalConfigs  = Basics.generateConfigurations(Basics.ForPhotoEmission(), configs)
+        augerSettings = AutoIonization.Settings() ## AutoIonization.Settings(), printout=true, operator=CoulombInteraction())
+        
+        comp = Atomic.Computation(Atomic.Computation(), name="Non-radiative (Auger) lifetimes",  
+                                  grid=currentGrid, nuclearModel=Nuclear.Model(Z);
+                                  initialConfigs = configs, finalConfigs = finalConfigs, 
+                                  processSettings = augerSettings ); 
+        results = perform(comp, output=true)
+        return( results )
+    end
+    
+    # Print or suppress the standard output
+    if    printout  atomic_code()
+    else  
+          results = redirect_stdout(devnull) do   
+                       atomic_code()  end
+          lines = results["AutoIonization lines:"]
+          AutoIonization.displayLifetimes(stdout, lines)
+    end
+    
+    return( nothing )
+end 
+
+#################################################################################################################################
+#################################################################################################################################
+
+
+"""
+`ForPedestrians.computeResonanceStrength(theme::Basics.ForDielectronicRecombination, initialConfigs::Array{Configuration,1};
+                                         grid::Radial.Grid=Radial.Grid(), asfSettings::AsfSettings=AsfSettings(),
+                                         printout::Bool=false)` 
+    ... computes the dielectronic recombination resonance strength of all levels of the given configurations.
+        The default values of the grid and asfSettings are used but can be overwritten on demand.
+        The results are printed to screen but nothing is returned otherwise.
+        
+        Simplified call:   setDefaults("nuclear: charge", 10.0)
+                           setDefaults("unit: strength", "cm^2 eV")   
+                           initialConfigs = [Configuration("1s^2 2s")]
+                           fromShells     = [Shell("2s")]
+                           toShells       = [Shell("2p")]
+                           intoShells     = Basics.generateShellList(6, 7, 4)
+                           decayShells    = Basics.generateShellList(2, 4, 3)
+                           theme          = Basics.ForDielectronicRecombination(fromShells, toShells, intoShells, decayShells)
+                           computeResonanceStrength(theme, initialConfigs)
+"""
+function computeResonanceStrength(theme::Basics.ForDielectronicRecombination, initialConfigs::Array{Configuration,1};
+                                  grid::Radial.Grid=Radial.Grid(), asfSettings::AsfSettings=AsfSettings(),
+                                  printout::Bool=false)
+    Basics.checkConfigurations(Basics.NumberOfElectrons(), initialConfigs)
+    # Collect explanations
+    Basics.displayConfigurations(stdout, initialConfigs, details = "for DR resonance strength")
+        
+    sa =    "\n* computes the dielectronic recombination resonance strength of all levels from the configurations above; " *
+            "the following assumptions/simplifications are made: " *
+            "\n    + The intermediate (doubly-excited) and final-state configurations are generated automatically." *
+            "\n    + The intermediate configurations include excitations fromShells --> toShells + the capture intoShells." *
+            "\n    + The final-state configurations include the de-excitation toShells, intoshells --> decayShells." *
+            "\n    + These two lists of configurations can be controlled by generating proper shell lists." *
+            "\n    + Call ? Basics.generateShellList  to understand how useful shell lists can be generated." *
+            "\n    + Use the optional argument  printout = true  to generate intermediate printout." *
+            "\n    + Use the optional argument  grid = Radial.Grid(...)  to refine the radial grid, if needed." *
+            "\n    + For more elaborate computations, make use of perform(comp::Atomic.Computation) " *
+            "\n    + Call ? Atomic.Computation for further details. " *
+            "\n    + Call ? setDefaults ... to define user-specified units for the computations. " *
+            "\n    " *
+            "\n    UNDER CONSTRUCTION !!! "
+    println(sa)
+    
+    # Generate the intermediate and final-state configurations
+    (intermediateConfs, finalConfs) = Basics.generateConfigurations(theme, initialConfigs)
+    Basics.displayConfigurations(stdout, intermediateConfs, details = "dielectronic capture")
+    Basics.displayConfigurations(stdout, finalConfs,        details = "(radiative) stabilization")
+    
+    # Determine a useful grid
+    if      grid.NoPoints == 0    currentGrid = Radial.Grid(Radial.Grid(false), rnt = 1.0e-5, h = 5.0e-2, hp = 2.0e-2, rbox = 15.0)
+    else                          currentGrid = grid
+    end
+    
+    # Specify the atomic computations
+    function atomic_code()
+        Z           = Defaults.getDefaults("nuclear: charge")
+        drSettings  = DielectronicRecombination.Settings(DielectronicRecombination.Settings(), multipoles = [E1], gauges = [UseCoulomb, UseBabushkin],
+                                                         printBefore = true, electronEnergyShift = 0.)
+                                            
+        comp        = Atomic.Computation(Atomic.Computation(), name="Dielectronic recombination resonance strength computations", 
+                                         grid=currentGrid, nuclearModel=Nuclear.Model(Z), 
+                                         initialConfigs = initialConfigs, intermediateConfigs = nConfigs,  
+                                         finalConfigs = fConfigs, processSettings = drSettings )
+
+        results     = perform(comp, output=true)
+        return( results )
+    end
+    
+    # Print or suppress the standard output
+    if    printout  atomic_code()
+    else  
+          results = redirect_stdout(devnull) do   
+                       atomic_code()  end
+          @show keys(results)
+          ##x multiplet = results["multiplet:"]
+          ##x Basics.displayLevels(stdout, [multiplet]; N=200) 
+    end
+    println("Back again.")    
+    
+    return( nothing )
+end 
+
+
+#################################################################################################################################
+#################################################################################################################################
+
+
+"""
+`ForPedestrians.computeTransitionRates(theme::Basics.ForAutoIonization, initialConfigs::Array{Configuration,1},
+                                       finalConfigs::Array{Configuration,1};
+                                       grid::Radial.Grid=Radial.Grid(), asfSettings::AsfSettings=AsfSettings(),
+                                       printout::Bool=false)` 
+    ... computes the autoionization (Auger) rates for all levels that are defined by the given initial and final 
+        configurations. The final-state configurations must have one electron less than the initial-state configurations.
+        The default settings of the grid and asfSettings are used but can be overwritten on demand.
+        The results are printed to screen but nothing is returned otherwise.
+        
+        Simplified call:   setDefaults("nuclear: charge", 10.0)
+                           initialConfigs = [Configuration("1s 2s^2 2p^6")]
+                           finalConfigs   = [Configuration("[He] 2s^0 2p^6"), Configuration("[He] 2s 2p^5"),
+                                             Configuration("[He] 2s^2 2p^4")]
+                           computeTransitionRates(Basics.ForAutoIonization(), initialConfigs, finalConfigs)
+"""
+function computeTransitionRates(theme::Basics.ForAutoIonization, initialConfigs::Array{Configuration,1},
+                                finalConfigs::Array{Configuration,1};
+                                grid::Radial.Grid=Radial.Grid(), asfSettings::AsfSettings=AsfSettings(),
+                                printout::Bool=false)
+    Basics.checkConfigurations(Basics.NumberOfElectrons(), initialConfigs, finalConfigs)
+    # Collect explanations
+    configs = copy(initialConfigs);    append!(configs, finalConfigs)
+    Basics.displayConfigurations(stdout, configs, details = "autoionization computations")
+        
+    sa =    "\n* Compute the autoionization (Auger) rates between all levels from the given initial and final configurations above; " *
+            "the following assumptions/simplifications are made: " *
+            "\n    + All autoionization (Auger) rates are based on the instantaneous Coulomb interaction only. " *
+            "\n    + Use the optional argument  printout = true  to generate intermediate printout." *
+            "\n    + Use the optional argument  grid = Radial.Grid(...)  to refine the radial grid, if needed." *
+            "\n    + For more elaborate computations, make use of perform(comp::Atomic.Computation) " *
+            "\n    + Call ? Atomic.Computation for further details. " *
+            "\n    + Call ? setDefaults ... to define user-specified units for the computations. "
+    println(sa)
+    
+    # Determine a useful grid
+    if      grid.NoPoints == 0    currentGrid = Radial.Grid(Radial.Grid(false), rnt = 1.0e-5, h = 5.0e-2, hp = 2.0e-2, rbox = 15.0)
+    else                          currentGrid = grid
+    end
+        
+    augerSettings = AutoIonization.Settings()    ## AutoIonization.Settings(), printout=true, operator=CoulombInteraction())
+    
+    # Specify the atomic computations
+    function atomic_code()    
+        Defaults.setDefaults("standard grid", grid)
+        Z = Defaults.getDefaults("nuclear: charge")
+        
+        comp = Atomic.Computation(Atomic.Computation(), name="Autoionization (Auger) rates",  
+                                grid=currentGrid, nuclearModel=Nuclear.Model(Z);
+                                initialConfigs = initialConfigs, finalConfigs = finalConfigs, 
+                                processSettings = augerSettings ); 
+        results = perform(comp, output=true)
+        return( results )
+    end
+    
+    # Print or suppress the standard output
+    if    printout  atomic_code()
+    else  
+          results = redirect_stdout(devnull) do   
+                       atomic_code()  end
+          lines = results["AutoIonization lines:"]
+          AutoIonization.displayRates(stdout, lines, augerSettings)
+    end
+        
+    return( nothing )
+end 
+
+
+"""
+`ForPedestrians.computeTransitionRates(theme::Basics.ForPhotoEmission, initialConfigs::Array{Configuration,1},
+                                       finalConfigs::Array{Configuration,1};
+                                       grid::Radial.Grid=Radial.Grid(true), asfSettings::AsfSettings=AsfSettings(),
+                                       printout::Bool=false)` 
+    ... computes the photoemission rates and oscillator strengths for all levels that are defined by the given 
+        initial and final configurations. Obviously, the initial- and final-state configurations must share the same 
+        number of electrons. The default settings of the grid and asfSettings are used but can be overwritten on demand.
+        The results are printed to screen but nothing is returned otherwise.
+        
+        Simplified call:   setDefaults("nuclear: charge", 10.0)
+                           initialConfigs = [Configuration("1s 2s^2 2p^6")]
+                           finalConfigs   = [Configuration("[He] 2s 2p^6"), Configuration("[He] 2s^2 2p^5")]
+                           computeTransitionRates(Basics.ForPhotoEmission(), initialConfigs, finalConfigs)
+"""
+function computeTransitionRates(theme::Basics.ForPhotoEmission, initialConfigs::Array{Configuration,1},
+                                finalConfigs::Array{Configuration,1};
+                                grid::Radial.Grid=Radial.Grid(true), asfSettings::AsfSettings=AsfSettings(),
+                                printout::Bool=false)
+    configs = copy(initialConfigs);    append!(configs, finalConfigs)
+    Basics.checkConfigurations(Basics.NumberOfElectrons(), configs)
+    # Collect explanations
+    Basics.displayConfigurations(stdout, configs, details = "photoemission computations")
+        
+    sa =    "\n* Compute the photoemission (radiative) rates and oscillator strengths between all levels " *
+            "from the given initial and final configurations above; " *
+            "\n  the following assumptions/simplifications are made: " *
+            "\n    + All photoemission rates are based on the electric-dipole (E1) approximation only. " *
+            "\n    + Use the optional argument  printout = true  to generate intermediate printout." *
+            "\n    + Use the optional argument  grid = Radial.Grid(...)  to refine the radial grid, if needed." *
+            "\n    + For more elaborate computations, make use of perform(comp::Atomic.Computation) " *
+            "\n    + Call ? Atomic.Computation for further details. " *
+            "\n    + ... \n"
+    println(sa)
+    
+    photoSettings = PhotoEmission.Settings(PhotoEmission.Settings(), multipoles=[E1], gauges=[UseCoulomb, UseBabushkin], 
+                                           printBefore=true)
+    
+    # Specify the atomic computations
+    function atomic_code()    
+        Defaults.setDefaults("standard grid", grid)
+        Z = Defaults.getDefaults("nuclear: charge")
+        
+        comp = Atomic.Computation(Atomic.Computation(), name="Photoemission (radiative) rates and oscillator strengths",  
+                                  grid=grid, nuclearModel=Nuclear.Model(Z);
+                                  initialConfigs = initialConfigs, finalConfigs = finalConfigs, 
+                                  processSettings = photoSettings ); 
+        results = perform(comp, output=true)
+        return( results )
+    end
+    
+    # Print or suppress the standard output
+    if    printout  atomic_code()
+    else  
+          results = redirect_stdout(devnull) do   
+                       atomic_code()  end
+          lines = results["radiative lines:"]
+          PhotoEmission.displayRates(stdout, lines, photoSettings)
+    end
+        
+    return( nothing )
+end 
+
+
+
+#################################################################################################################################
+#################################################################################################################################
+#################################################################################################################################
+#################################################################################################################################
+
+"""
+`ForPedestrians.displayCouplings(theme::Basics.FineStructure, configs::Array{Configuration,1})` 
+    ... displays the (open-shell) configurations along with the total angular momenta J and multiplicities of the associated 
+        fine-structure levels. Each configurations is treated separately and can have a different number of electrons. 
+        The coupling information is printed to screen but nothing is returned otherwise.
+        
+        Simplified call:   configs   = [Configuration("[He] 2p^6"), Configuration("[He] 2s 2p^5"), 
+                                        Configuration("[He] 2s^2 2p^4"), Configuration("1s 2s 2p^3")]
+                           displayCouplings(Basics.FineStructure(), configs)
+"""
+function displayCouplings(theme::Basics.FineStructure, configs::Array{Configuration,1})
+    # Collect explanations
+    sa =    "\n* Selected configurations along with the total angular momenta J and multiplicities of the associated " *
+            "fine-structure levels: " *
+            "\n    + The total J are derived from the subsequent coupling of the (open-subshell) states. " *
+            "\n    + Call ? displayConfigurationFineStructure(), ...) for further details. \n"
+    println(sa)
+
+    was = Basics.extractFromConfigurations(NumberOfElectrons(), configs)
+    was = sort( unique(was) )
+    for  wa in was
+        confs = Basics.extractConfigurations(Basics.ByNumber([wa]), configs)
+        for  conf in confs
+            Basics.displayConfiguration(stdout, theme, conf, header=false)
+        end
+    end 
+    
+    return( nothing )
+end 
+
+            
+"""
+`ForPedestrians.displayCouplings(theme::Basics.FineStructureLS, configs::Array{Configuration,1})` 
+    ... displays the (open-shell) configurations along with the total angular momenta J and multiplicities of the associated 
+        fine-structure levels. Each configurations is treated separately and can have a different number of electrons. 
+        The coupling information is printed to screen but nothing is returned otherwise.
+        
+        Simplified call:   configs   = [Configuration("[He] 2p^6"), Configuration("[He] 2s 2p^5"), 
+                                        Configuration("[He] 2s^2 2p^4"), Configuration("1s 2s 2p^3")]
+                           displayCouplings(Basics.FineStructure(), configs)
+"""
+function displayCouplings(theme::Basics.FineStructureLS, configs::Array{Configuration,1})
+    # Collect explanations
+    sa =    "\n* Selected configurations along with the total angular momenta J and multiplicities of the associated " *
+            "fine-structure levels: " *
+            "\n    + The total J are derived from the subsequent coupling of the (open-subshell) states. " *
+            "\n    + Call ? displayConfiguration(FineStructureLS(), ...) for further details. \n"
+    println(sa)
+
+    was = Basics.extractFromConfigurations(NumberOfElectrons(), configs)
+    was = sort( unique(was) )
+    for  wa in was
+        confs = Basics.extractConfigurations(Basics.ByNumber([wa]), configs)
+        for  conf in confs
+            Basics.displayConfiguration(stdout, theme, conf, header=false)
+        end
+    end 
+    
+    return( nothing )
+end 
+
+
+
+#################################################################################################################################
+#################################################################################################################################
+#################################################################################################################################
+#################################################################################################################################
+
+"""
+`ForPedestrians.estimateCrossSections(theme::Basics.ForImpactIonization, initialConfigs::Array{Configuration,1};
+                                      printout::Bool=false)` 
+    ... estimates the electron impact-ionization cross sections of all shells in the given configurations.
+        The results are printed to screen but nothing is returned otherwise.
+        
+        Simplified call:   setDefaults("nuclear: charge", 10.0)
+                           initialConfigs = [Configuration("1s^2 2s^2 2p^6")]
+                           estimateCrossSections(Basics.ForImpactIonization(), initialConfigs) 
+"""
+function estimateCrossSections(theme::Basics.ForImpactIonization, initialConfigs::Array{Configuration,1};
+                               printout::Bool=false)
+    Basics.checkConfigurations(Basics.NumberOfElectrons(), configs)
+    # Collect explanations
+    Basics.displayConfigurations(stdout, configs, details = "electron impact-ionization cross sections")
+        
+    sa =    "\n* Estimate the electron impact-ionization cross sections for the shells of the configurations above; " *
+            "the following assumptions/simplifications are made: " *
+            "\n    + The relativistic binary-encounter Bethe (BEB) model is applied." *
+            "\n    + Use the optional argument  printout = true  to generate intermediate printout." *
+            "\n    + For more elaborate computations, make use of perform(comp::Empirical.Computation) " *
+            "\n    + Call ? Empirical.Computation for further details. " *
+            "\n    + Call ? setDefaults ... to define user-specified units for the computations. "
+    println(sa)
+    
+    # Specify the atomic computations
+    function atomic_code()
+        Z           = Defaults.getDefaults("nuclear: charge")
+        approx      = ImpactIonization.RelativisticBEBmodel()
+        multipleN   = 1
+        iEnergies   = [2.0^(i-1) for i=1:18]        ## unit: eV. The incident energies should be > epsilon_subshell.
+        shells      = Basics.extractFromConfigurations(Basics.AllShells(), configs)
+        selection   = ShellSelection(true, shells, Int64[])
+        name        = "EII cross section estimates."
+        nucModel    = Nuclear.Model(Z)
+        eiiSettings = ImpactIonization.Settings(approx, multipleN, iEnergies, true, true, selection)
+        comp        = Empirical.Computation(name, nucModel, grid, configs, eiiSettings)
+        results     = perform(comp, output=true)
+        return( results )
+    end
+    
+    # Print or suppress the standard output
+    if    printout  atomic_code()
+    else  
+          results = redirect_stdout(devnull) do   
+                       atomic_code()  end
+          @show keys(results)
+          ##x multiplet = results["multiplet:"]
+          ##x Basics.displayLevels(stdout, [multiplet]; N=200) 
+    end
+    println("Back again.")
+    
+    return( nothing )
+end 
+
+end  ## module

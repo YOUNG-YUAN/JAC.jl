@@ -23,6 +23,7 @@ function addZerosToCsfR                                         end
 function analyze                                                end
 function analyzeConvergence                                     end
 function analyzeGrid                                            end
+function checkConfigurations                                    end
 function compute                                                end
 function computeDensity                                         end
 function computeDiracEnergy                                     end
@@ -89,7 +90,7 @@ function generateConfigurations                                 end
 function generateConfigurationsForExcitationScheme              end
 ##x function generateConfigurationsWithAdditionalElectron           end
 ##x function generateConfigurationsWithAdditionalElectrons          end
-##x function generateConfigurationsWithElectronCapture              end
+function generateConfigurationsWithElectronCapture              end
 ##x function generateConfigurationsWithElectronLoss                 end
 function generateCsfRs                                          end
 function generateFieldCoordinates                               end

@@ -1134,7 +1134,7 @@ end
 
 
 
-#==  August 2025, replaced by Basics.AddElectrons(), Basics.ExciteElectrons(), ...
+#  August 2025, replaced by Basics.AddElectrons(), Basics.ExciteElectrons(), ...
 """
 `Basics.generateConfigurationsWithElectronCapture(confs::Array{Configuration,1}, fromShells::Array{Shell,1}, toShells::Array{Shell,1}, noex::Int64)`  
     ... generates a list of non-relativistic configurations for the given (reference) confs and with one additional (cpatured) 
@@ -1163,7 +1163,7 @@ function Basics.generateConfigurationsWithElectronCapture(confs::Array{Configura
     newConfList = unique(newConfList)
     
     return( newConfList )
-end ==#
+end 
 
 
 

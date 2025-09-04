@@ -365,7 +365,6 @@ function generateConfigurationsForDielectronicCapture(multiplets::Array{Multiple
     end
     coreConfList    = Basics.generateConfigurations(initialConfList, scheme.excitationFromShells, scheme.excitationToShells, 
                                                     scheme.NoExcitations)
-    error("Substitution unclear: need to be re-thought")
     if scheme.calcWithoutIntoShells
         captureConfList = Cascade.generateCaptureConfigurations(multiplets, coreConfList, scheme, nm, grid)
     else
@@ -447,12 +446,23 @@ function perform(scheme::DielectronicRecombinationScheme, comp::Cascade.Computat
     #
     # Generate subsequent cascade configurations as well as display and group them together
     wa  = Cascade.generateConfigurationsForDielectronicCapture(multiplets, comp.scheme, comp.nuclearModel, comp.grid)
+    Basics.displayConfigurations(stdout, wa[1], details="initial configurations of the DR cascade ")
+    Basics.displayConfigurations(stdout, wa[2], details="doubly-excited capture configurations of the DR cascade ")
+    Basics.displayConfigurations(stdout, wa[3], details="decay configurations of the DR cascade ")
+    initialConfigs  = Basics.extractConfigurations(Basics.FromMultiplet(), multiplets)
+    Basics.displayConfigurations(stdout, initialConfigs, details="initial configurations of the DR cascade ")
+    excitedConfigs  = Basics.generateConfigurations(Basics.ExciteElectrons(1, comp.scheme.excitationFromShells, comp.scheme.excitationToShells), initialConfigs)
+    capturedConfigs = Basics.generateConfigurations(Basics.AddElectrons(1, comp.scheme.intoShells), excitedConfigs)
+    Basics.displayConfigurations(stdout, capturedConfigs, details="doubly-excited capture configurations of the DR cascade ")
+    allShells       = comp.scheme.excitationToShells
+    append!(allShells, comp.scheme.excitationDecayShells)
+    allShells       = sort( unique(allShells) )
+    decayConfigs    = Basics.generateConfigurations(Basics.ExciteElectrons(1, allShells, comp.scheme.decayShells), excitedConfigs)
+    Basics.displayConfigurations(stdout, decayConfigs, details="decay configurations of the DR cascade ")
+    error("xxx")
     ##x wb1 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[1], sa="initial configurations of the DR cascade ")
     ##x wb2 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[2], sa="doubly-excited capture configurations of the DR cascade ")
     ##x wb3 = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa[3], sa="decay configurations of the DR cascade ")
-    wb1 = Basics.displayConfigurations(comp.nuclearModel.Z, wa[1], sa="initial configurations of the DR cascade ")
-    wb2 = Basics.displayConfigurations(comp.nuclearModel.Z, wa[2], sa="doubly-excited capture configurations of the DR cascade ")
-    wb3 = Basics.displayConfigurations(comp.nuclearModel.Z, wa[3], sa="decay configurations of the DR cascade ")
     #
     # Determine first all configuration 'blocks' and from them the individual steps of the cascade
     wc1 = Cascade.generateBlocks(scheme, comp::Cascade.Computation, wb1)
