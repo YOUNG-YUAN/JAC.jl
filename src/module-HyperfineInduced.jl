@@ -1,4 +1,14 @@
 
+#==
+++  September 2025: Further work on hyperfine-resolved DR spectra suggest to modify some of the basic data structure
+    (IJF_Vecor, IJF_Basis, IJF_Level) and to move them (back) into the Hfs module for consistency. The Hfs module should
+    comprise all data structures that are needed to construct IJF-coupled hyperfine levels, either by including the 
+    hyperfine-interaction explicitly into their representation or by omitting this interaction (i.e. for a pure coupling 
+    of the angular momenta.) It is neither recommended nor useful to define analogue data structures in different modules,
+    if the don't support a special purpose (such as Settings).
+==#
+
+
 """
 `module  JAC.HyperfineInduced`  
 ... a submodel of JAC that contains all methods for computing HFS A and B coefficients, hyperfine sublevel representations, etc.
@@ -11,6 +21,8 @@ using Printf, ..AngularMomentum, ..Basics,  ..Defaults, ..Hfs, ..ManyElectron, .
 
 
 
+#==  August 2025, these data structures are now moved (back) into Hfs module and have been slightly modified as well. 
+     Please, use the data structure from Hfs module and adapt your procedures to the definition over there.  ==#
 """
 `struct  HyperfineInduced.IJF_Vector`  
     ... defines a type for a IJF-coupled basis vector with given nuclear spin and parity as well as

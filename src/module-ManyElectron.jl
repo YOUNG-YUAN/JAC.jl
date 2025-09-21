@@ -270,7 +270,7 @@ end
 `ManyElectron.CsfR(J::AngularJ64, parity::Parity)`  
     ... simple constructor for given J and parity, and where standardOrbitals is set to false.
 """
-function CsfR(J::AngularJ64, parity::String)
+function CsfR(J::AngularJ64, parity::Parity)
         CsfR(false, J, parity, Int64[], Int64[], AngularJ64[], AngularJ64[], Subshell[] )
 end
 
