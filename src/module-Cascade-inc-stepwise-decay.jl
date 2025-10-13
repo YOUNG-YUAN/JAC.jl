@@ -1,13 +1,5 @@
 
-#== August 2025, the following replacements need to be made and tested properly:
-++ Replace below:  Cascade.generateConfigurationsForStepwiseDecay(scheme::Cascade.StepwiseDecayScheme, initialConfigs::Array{Configurations,1})
-++ See Basics.generateConfigurations(Basics.ForStepwiseDecay(), confs)
-==#
-
-# Functions and methods for scheme::Cascade.HollowIonScheme computations
-
-# Functions and methods for cascade computation
-
+# Functions and methods for scheme::Cascade.StepwiseDecayScheme computations
 
 """
 `Cascade.computeSteps(scheme::Cascade.StepwiseDecayScheme, comp::Cascade.Computation, stepList::Array{Cascade.Step,1})` 
@@ -236,6 +228,7 @@ function determineSteps(scheme::Cascade.StepwiseDecayScheme, comp::Cascade.Compu
 end
 
 
+#==  October 2025, replaced by Basics.ForStepwiseDecay(), ...        
 """
 `Cascade.generateConfigurationsForStepwiseDecay(scheme::Cascade.StepwiseDecayScheme, initialConfigs::Array{Configurations,1})`  
     ... generates all possible configurations as obtained by a stepwise loss of maxElectronLoss electrons and by considering
@@ -320,6 +313,7 @@ function generateConfigurationsForStepwiseDecay(scheme::Cascade.StepwiseDecaySch
 
     return( allConfigs )
 end
+==#
 
 
 """
@@ -353,15 +347,25 @@ function perform(scheme::StepwiseDecayScheme, comp::Cascade.Computation; output:
     if  printSummary   Cascade.displayLevels(iostream, multiplets, sa="initial ")          end
     #
     # Generate subsequent cascade configurations as well as display and group them together
-    wax  = Cascade.generateConfigurationList(multiplets, comp.scheme.maxElectronLoss, comp.scheme.NoShakeDisplacements)
-    wa   = Cascade.generateConfigurationsForStepwiseDecay(comp.scheme, comp.initialConfigs)
+    initialConfigs  = Basics.extractConfigurations(Basics.FromMultiplet(), multiplets)
+    @show initialConfigs
+    ## wax = Cascade.generateConfigurationList(multiplets, comp.scheme.maxElectronLoss, comp.scheme.NoShakeDisplacements)
+    ## @show wax
+    ## wbx = Basics.displayConfigurations(comp.nuclearModel.Z, wax, sa="OLD decay ")
+    ## @show wax
+    decayConfigs    = Basics.generateConfigurations(Basics.ForStepwiseDecay(comp.scheme.maxElectronLoss), initialConfigs)
+    append!(decayConfigs, initialConfigs)
+    NoElectrons     = unique( Basics.extractFromConfigurations(Basics.NumberOfElectrons(), decayConfigs) )
+    Basics.displayConfigurations(stdout, Basics.ByNumber(NoElectrons), decayConfigs, details="decay configurations")
+    ##x wa   = Cascade.generateConfigurationsForStepwiseDecay(comp.scheme, comp.initialConfigs)
     ##x wb  = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wa, sa="decay ")
     ##x wbx = Cascade.groupDisplayConfigurationList(comp.nuclearModel.Z, wax, sa="OLD decay ")
-    wb  = Basics.displayConfigurations(comp.nuclearModel.Z, wa, sa="decay ")
-    wbx = Basics.displayConfigurations(comp.nuclearModel.Z, wax, sa="OLD decay ")
+    ##x wb  = Basics.displayConfigurations(comp.nuclearModel.Z, wa, sa="decay ")
     #
     # Determine first all configuration 'blocks' and from them the individual steps of the cascade
-    wc = Cascade.generateBlocks(comp, wb, basis.orbitals, sa="for the decay cascade:")
+    ##x wc = Cascade.generateBlocks(comp, wb, basis.orbitals, sa="for the decay cascade:")
+    wc = Cascade.generateBlocks(comp, decayConfigs, basis.orbitals, sa="for the decay cascade:")
+    ##x error("xxx")
     Cascade.displayBlocks(stdout, wc, sa="for the decay cascade ")
     if  printSummary   Cascade.displayBlocks(iostream, wc, sa="for the decay cascade ")    end 
     gMultiplets = Multiplet[];     for block in wc  push!(gMultiplets, block.multiplet)    end

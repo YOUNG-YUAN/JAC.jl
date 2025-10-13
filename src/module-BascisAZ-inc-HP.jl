@@ -339,22 +339,6 @@ function Basics.merge(bases::Array{Basis,1})
 end
 
 
-#== August 2025, just moved
-"""
-`Basics.merge(aList::Array{Configuration,1}, bList::Array{Configuration,1}, ...)`  
-    ... to merge two (or more) configuration list into a single list and to unify them. 
-        A cList::Array{Configuration,1} is returned
-"""
-function Basics.merge(aList::Array{Configuration,1}, bList::Array{Configuration,1})
-    cList = copy(aList);      append!(cList, bList);      cList = Base.unique(cList)
-    return( cList )
-end
-function Basics.merge(aList::Array{Configuration,1}, bList::Array{Configuration,1}, cList::Array{Configuration,1})
-    dList = Basics.merge(aList, bList);     dList = Basics.merge(dList, cList)
-    return( dList )
-end  ==#
-
-
 """
 `Basics.merge(multiplets::Array{Multiplet,1})`  
     ... to merge two (or more) atomic multiplets into a single multiplet::Multiplet. This method assumes (and checks) that all 

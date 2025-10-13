@@ -25,6 +25,8 @@ For reference to (using) this code, please, use the Computer Physics Communicati
      [European Physical Journal D 79, 22 (2025)](https://link.springer.com/article/10.1140/epjd/s10053-025-00969-0)
 * S. Fritzsche; Atomic input for modeling ionic mixtures in astrophysical plasma.
      [European Physical Journal A 61, 63 (2025)](https://doi.org/10.1140/epja/s10050-025-01535-3)
+* S. Fritzsche, A.K. Sahoo, L. Sharma and S. Schippers, Simulated photoabsorption spectra for singly and multiply charged ions.
+     [Atoms 13, 77 (2025)](https://doi.org/10.3390/atoms13090077)
 
 
 See also [`citations.bib`](https://github.com/OpenJAC/JenaAtomicCalculator.jl/blob/master/docs/src/citations.bib) for the relevant references(s).

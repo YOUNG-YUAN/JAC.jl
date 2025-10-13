@@ -4,159 +4,94 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ fd4ef417-311f-43aa-a601-bf8a9d66b890
-using JenaAtomicCalculator, SymEngine
+# ╔═╡ bda25162-640e-406e-aa7f-4bc468d688ba
 
-# ╔═╡ 79374db5-1fbd-4499-b8d9-c7b840bdee52
-html"""
-<style>
-	main {
-		margin: 0 auto;
-		max-width: 2000px;
-    	padding-left: max(150px, 10%);
-    	padding-right: max(150px, 10%);
-	}
-</style>
-"""
-
-# ╔═╡ 8d491602-2e68-4ce9-b949-859f91cfee9d
-md"""
-# Simplify Racah expressions by means of sum rules
-"""
-
-# ╔═╡ 956d7bd6-d59f-4daa-88b6-9b8879918d79
-md"""
-**Note:** The Julia package `SymEngine` is needed to perform symbolic simplifications of Racah algebra expressions in JAC but, by default, is not automatically loaded.
-
-As mentioned before, the (data) type `RacahExpression` is very central to applying the techniques from Racah's algebra; see *LiveDocs*. This data type enables one to comprise -- less or more -- sophisticated expressions into a single Julia variable and to attempt its simplification by a set of internal (sum) rules. As seen from the definition of this (data) struct, the different 'delta' and Wigner symbols of such an expression are kept and maintained separately, so that the known sum rules can be applied more readily. Moreover, the last constructor of a `RacahExpression` shows that it quite simple to overwrite or extent an already existing RacahExpression, starting from a simple 𝟙:
-"""
-
-# ╔═╡ b0f8586c-db7e-4872-b4e3-ff6beafb4c6c
-RacahExpression()
-
-# ╔═╡ 4c2b4d2a-4b34-4f6a-9690-6efc9f2d3fea
-md"""
-Perhaps, the simplest sum rules refer to the orthogonality of the Wigner 3-j and 6-j symbols; for example, the Wigner 6-j symbols fullfill the following orthogonality relations which can be displayed (just for illustration here) by looking up `RacahAlgebra.sumRulesForTwoW6j`. Both of the shown rules show that a summation over the product of two Wigner 6-j symbols can be re-written just in terms of some quantum numbers and triangle conditions. Note that $[a,b,...] = (2a+1)\: (2b+1)\: ...$. More general, all the implemented sum rules are displayed as inline comments in the code, although not as docstrings (apart from this particular function here).
-
-*Typically, only some standard form of each sum rule is shown in the literature*, and many of these sum rules are just displayed in quite specialized texts about angular momenta. Likely, the most comprehensive compilation of these (and many other) rules can be found in the **monograph by Varshalovich et al. (1988)**. --- In general, however, one needs to recognize all the symmetries of a Racah expressions, implying all the phases and possible (weight) factors that arise from these symmetries. In JAC, this is realized by cycling automatically through all symmetric forms of the Wigner n-j (n = 3,6,9) symbols. In a later step, we also plan to take the spherical harmonics and the Wigner rotation matrices into account as well into the internal representation of a RacahExpression.
-
-Again, let us first declare some Basic variables which we can later apply to define our first `RacahExpression`:
-"""
-
-# ╔═╡ e9325c21-5136-49bd-b9e4-77924560b4e2
 begin
-	a = Basic(:a);    b = Basic(:b);    c = Basic(:c);    d  = Basic(:d);    ee  = Basic(:ee);    f  = Basic(:f)
-	g = Basic(:g);    h = Basic(:h);    k = Basic(:k);    l  = Basic(:l);    p   = Basic(:p);     q  = Basic(:q);     
-	r = Basic(:r);    s = Basic(:s);    t = Basic(:t);    X  = Basic(:X);    Y   = Basic(:Y);     Z  = Basic(:Z);
+    # Imports (install if missing: import Pkg; Pkg.add("Plots"))
+    using JenaAtomicCalculator
+    using Plots
 end
 
-# ╔═╡ 571405c1-0f1f-4cb5-88dd-31e4f9afc74d
-begin
-	aw6j = W6j(X, Y, Z, a, b ,c);    bw6j = W6j(X, Y, Z, a, b ,c)
-	rex  = RacahExpression( [X, Y, Z], Integral[], Basic(0), Basic((2*X+1)*(2*Y+1)*(2*Z+1)), 
-                            Kronecker[], Triangle[], W3j[], W6j[aw6j, bw6j], W9j[], Ylm[], Djpq[] )
-end
+# ╔═╡ 3f1b2fc1-db62-4995-ae1a-4028748a1e73
 
-# ╔═╡ b0619394-8dc7-43d0-b419-387eaaf9fe6b
 md"""
-As before, we can simply evaluate this expression which attempts to apply one of the -- more than 45 implemented -- sum rules in order to reduce either the number of Wigner symbols and/or the number of summation indices:
+# Define the nuclear (model) parameters & potential
 """
 
-# ╔═╡ d557472b-3056-4b6b-830c-dcfcbba34a27
-RacahAlgebra.evaluate(rex)
+# ╔═╡ 62c519ca-92b0-4c0b-8b18-fa4685a0c0ac
 
-# ╔═╡ 5b12989c-8069-4f42-96af-963881db0df2
+# using Interact
+
+# ╔═╡ 8b6f9e43-7e97-4e14-8aff-087da7b855fb
+
 md"""
-This example looks perhaps quite *over-simplified* as we could use exactly the *orthogonaly relation* from above to get this result. However, the same simplification also works if we first randomly re-write the given Racah expression and then attempt its simplification again.
+The charge and shape of the nucleus is essential to understand the electronic level structure and  some of the processes that may occur in an atom or ion. Usually, these and other nuclear parameters need to be specified prior to the generation of (electronic) wave functions, state representations as well as the computation of atomic amplitudes, properties and processes.
+
+In JenaAtomicCalculator, all information about the underlying **nuclear model** are kept in the data structure `Nuclear.Model` which carries the following information:
 """
 
-# ╔═╡ b47294f2-626b-48c2-80fb-e326ea88d692
-begin
-	rex2 = RacahAlgebra.equivalentForm(rex);   @show rex2
-	RacahAlgebra.evaluate(rex2)
-end
+# ╔═╡ e35b1873-d547-4be4-a59e-3dcb3668d225
+Nuclear.Model
 
-# ╔═╡ b6575a7f-43a2-4bc6-ae0c-efa6e182eb20
+# ╔═╡ 450c1243-e855-416a-b793-545451a27026
+
 md"""
-You may test this simplification several times for (randomly) different equivalent forms of `rex` and, likely, will receive slightly different results with regard to the number of symbols and summations. This is related to the **phase issue**, which refers to the fact that it is not easy to always recognize how the overall phase can be re-written internally so that a particular sum rule applies. Here, we note that the application of any sum rule always requests that all other parts of the given Racah expression, including its overall phase, must be independent of those parts which are to be removed. Further (formal) improvement on this **phase issue** might be possible but, sometimes, these equivalences need to be recognized and corrected manually.
-
-Of course, we can simplify also less obvious Racah expressions, such as:
+For quick computations and for most atomic processes, it is often sufficient to just specify the nuclear charge $Z$ and to leave all other parameters to their default values. For example, we here define such a nucleus for xenon $(Z=54)$ and will immediatly see the details of this specification:
 """
 
-# ╔═╡ 4e7dbd4d-28c7-47c2-befb-d756e1c413ed
-begin
-	cw6j = W6j(a, b, X, c, d, p);    dw6j = W6j(c, d, X, b, a, q)
-	rex3 = RacahExpression( [X], Integral[], Basic(X), Basic(2*X+1), Kronecker[], Triangle[], W3j[], W6j[cw6j, dw6j], W9j[], Ylm[], Djpq[] )
-	@show rex3
-	rex4  = RacahAlgebra.equivalentForm(rex3)
-	RacahAlgebra.evaluate(rex4)
-end
+# ╔═╡ 67b75fff-cea3-4d03-a8e8-ba0e4a6e4bd8
 
-# ╔═╡ 6b391ff1-7605-4679-9673-5229c07562a4
-begin
-	ew6j = W6j(a, f, X, ee, b, s);   fw9j = W9j(a, f, X, d, q, ee, p, c, b)
-	rex5 = RacahExpression( [X], Integral[], Basic(0), Basic(2*X+1), Kronecker[], Triangle[], W3j[], W6j[ew6j], W9j[fw9j], Ylm[], Djpq[] )
-	@show rex
-	rex6 = RacahAlgebra.equivalentForm(rex5)
-	RacahAlgebra.evaluate(rex6)
-end
+wa = Nuclear.Model(54.0)
 
-# ╔═╡ 76823179-81b9-4c02-afbe-f415be01996d
+# ╔═╡ ec8deef3-9202-484a-adb0-10b4b6bab9fc
+
 md"""
-Apart from these quite simple expressions, much more complex ones rapidly arise if angular momenta are coupled together or re-coupled in order to allow the simplification of many-particle matrix elements.
-
-In the next example, we shall consider the (so-called) re-coupling coefficients $ < (j_1, j_2) J_{12}, j_3: JM| j_1, (j_2,j_3) J_{23}: JM >$ which is known to be independent of $M$. The expression of this re-coupling coefficient can be written down quite easily by applying twice a Clesch-Gordan expansion on both sides of the 'overlap matrix element'. Simple manipulations gives immediately rise to the `RacahExpression`:
+Of course, we can also specify all details about the nucleus by using the *standard* constructor:
 """
 
-# ╔═╡ 998e3082-bb78-4add-a564-8cde78e136e9
-begin
-	j1   = Basic(:j1);    j2 = Basic(:j2);    j3 = Basic(:j3);    J12 = Basic(:J12);    J23 = Basic(:J23);    J = Basic(:J)
-	m1   = Basic(:m1);    m2 = Basic(:m2);    m3 = Basic(:m3);    M12 = Basic(:M12);    M23 = Basic(:M23);    M = Basic(:M)
-	w3ja = W3j(J12, j3, J, M12, m3, -M);        w3jb = W3j(j1, j2, J12, m1, m2, -M12)       
-	w3jc = W3j(j2, j3, J23, m2, m3, -M23);      w3jd = W3j(j1, J23, J, m1, M23, -M)   
-end
+# ╔═╡ 55060d8d-9af0-420b-8291-7e9e77ae0da1
 
-# ╔═╡ 85b4f8e2-38c4-43e2-b97e-a9c8e2050479
-begin
-	rex7 = RacahExpression( [m1, m2, m3, M12, M23], Integral[], -J12 + 2*j3 - 2*M - 2*j1 - M12 - M23 + J23, 
-          	  (2*J+1) * sqrt( (2*J12+1)*(2*J23+1) ), Kronecker[], Triangle[], [w3ja, w3jb, w3jc, w3jd], W6j[], W9j[], Ylm[], Djpq[] )
+wb = Nuclear.Model(54., "uniform", 132., 5.75, AngularJ64(5//2), 1.0, 2.0)
 
-end
+# ╔═╡ d029a88b-f6b4-43c1-a2f8-68a230289352
 
-# ╔═╡ 7eab1e4b-ab7d-4012-9b5d-9f96d2d989ea
 md"""
-which includes a five-fold summation (three further summations, for instance, for $m_1', m_2', m_3'$, and can be simplified because of the assumed normalization of the $|j_p m_p > $ states of all subsystems). Here, the simplification of this RacahExpression is already harder to see but can be obtained by calling:
+... or by *overwriting* the parameters from a previously defined nuclues:
 """
 
-# ╔═╡ 5bfe0fea-a3a9-4ca8-8e8e-33b3f6048e27
-RacahAlgebra.evaluate(rex7)
+# ╔═╡ 588e5480-99df-406e-90b2-523df9190f02
 
-# ╔═╡ f9f9639f-68e0-4ee5-8cb4-9328ac4d76b3
+wc = Nuclear.Model(wa, mu=4.1, Q=2.2)
+
+# ╔═╡ 985242fb-5dc8-4317-93fd-c90ac8b882fb
+
 md"""
-The given recoupling coefficient is obviously independent of $M$ and just given by a Wigner 6j symbol times some rather trivial (delta) factors. A closer inspection of the Wigner symbol also enables one to express the phase in a slightly more convinient form.
+Indeed, this feature of *overwriting* the parameter of an **existing object** is frequently use within JenaAtomicCalculator to re-define or overwrite the default values of different settings, representations and computations.
 """
 
-# ╔═╡ 759da271-0adf-4ae7-9642-8620c4c34690
+# ╔═╡ deea0ee7-bfb2-4290-b687-764a91bdc522
+
+
 
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 JenaAtomicCalculator = "830ae420-d14d-11e8-2f94-6b071437414d"
-SymEngine = "123dc426-2d89-5057-bbad-38513e3affd8"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 
 [compat]
 JenaAtomicCalculator = "~0.1.0"
-SymEngine = "~0.12.0"
+Plots = "~1.41.1"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.9"
+julia_version = "1.11.7"
 manifest_format = "2.0"
-project_hash = "50ee68bcc49840e277b1262e65524be0e279dead"
+project_hash = "7109ce05cf8d5c53a04084ef29f40568cfd8d7ed"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -166,7 +101,7 @@ version = "1.1.3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
-version = "1.1.1"
+version = "1.1.2"
 
 [[deps.ArrayLayouts]]
 deps = ["FillArrays", "LinearAlgebra", "StaticArrays"]
@@ -180,12 +115,13 @@ weakdeps = ["SparseArrays"]
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+version = "1.11.0"
 
 [[deps.BSplineKit]]
 deps = ["ArrayLayouts", "BandedMatrices", "FastGaussQuadrature", "ForwardDiff", "LinearAlgebra", "PrecompileTools", "Random", "Reexport", "SparseArrays", "Static", "StaticArrays", "StaticArraysCore", "StatsAPI"]
-git-tree-sha1 = "8950181792e94c20b204b4d25cba7f2399c5b386"
+git-tree-sha1 = "48b9300555c54256c12a539a3025f8d2075bea6a"
 uuid = "093aae92-e908-43d7-9660-e50ee39d5a0a"
-version = "0.19.0"
+version = "0.19.1"
 
 [[deps.BandedMatrices]]
 deps = ["ArrayLayouts", "FillArrays", "LinearAlgebra", "PrecompileTools"]
@@ -203,6 +139,7 @@ version = "1.9.4"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+version = "1.11.0"
 
 [[deps.BenchmarkTools]]
 deps = ["Compat", "JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
@@ -229,9 +166,9 @@ version = "1.18.5+0"
 
 [[deps.CodeTracking]]
 deps = ["InteractiveUtils", "UUIDs"]
-git-tree-sha1 = "5ac098a7c8660e217ffac31dc2af0964a8c3182a"
+git-tree-sha1 = "980f01d6d3283b3dbdfd7ed89405f96b7256ad57"
 uuid = "da1fd8a2-8d9e-5ec2-8556-3022fb5608a2"
-version = "2.0.0"
+version = "2.0.1"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -241,21 +178,19 @@ version = "0.7.8"
 
 [[deps.ColorSchemes]]
 deps = ["ColorTypes", "ColorVectorSpace", "Colors", "FixedPointNumbers", "PrecompileTools", "Random"]
-git-tree-sha1 = "a656525c8b46aa6a1c76891552ed5381bb32ae7b"
+git-tree-sha1 = "b0fd3f56fa442f81e0a47815c92245acfaaa4e34"
 uuid = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-version = "3.30.0"
+version = "3.31.0"
 
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
 git-tree-sha1 = "67e11ee83a43eb71ddc950302c53bf33f0690dfe"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
 version = "0.12.1"
+weakdeps = ["StyledStrings"]
 
     [deps.ColorTypes.extensions]
     StyledStringsExt = "StyledStrings"
-
-    [deps.ColorTypes.weakdeps]
-    StyledStrings = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
 
 [[deps.ColorVectorSpace]]
 deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "Requires", "Statistics", "TensorCore"]
@@ -358,6 +293,7 @@ version = "1.0.0"
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
+version = "1.11.0"
 
 [[deps.Dbus_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl"]
@@ -386,6 +322,7 @@ version = "1.15.1"
 [[deps.Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+version = "1.11.0"
 
 [[deps.DocStringExtensions]]
 git-tree-sha1 = "7442a5dfe1ebb773c29cc2962a8980f47221d76c"
@@ -455,12 +392,13 @@ weakdeps = ["HTTP"]
 
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
+version = "1.11.0"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra"]
-git-tree-sha1 = "6a70198746448456524cb442b8af316927ff3e1a"
+git-tree-sha1 = "173e4d8f14230a7523ae11b9a3fa9edb3e0efd78"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "1.13.0"
+version = "1.14.0"
 
     [deps.FillArrays.extensions]
     FillArraysPDMatsExt = "PDMats"
@@ -496,9 +434,9 @@ version = "0.6.2"
 
 [[deps.ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions"]
-git-tree-sha1 = "ce15956960057e9ff7f1f535400ffa14c92429a4"
+git-tree-sha1 = "dc41303865a16274ecb8450c220021ce1e0cf05f"
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
-version = "1.1.0"
+version = "1.2.1"
 weakdeps = ["StaticArrays"]
 
     [deps.ForwardDiff.extensions]
@@ -525,7 +463,7 @@ version = "3.4.0+2"
 [[deps.GMP_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "781609d7-10c4-51f6-84f2-b8444358ff6d"
-version = "6.2.1+6"
+version = "6.3.0+0"
 
 [[deps.GR]]
 deps = ["Artifacts", "Base64", "DelimitedFiles", "Downloads", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Preferences", "Printf", "Qt6Wayland_jll", "Random", "Serialization", "Sockets", "TOML", "Tar", "Test", "p7zip_jll"]
@@ -563,11 +501,17 @@ git-tree-sha1 = "45288942190db7c5f760f59c04495064eedf9340"
 uuid = "b0724c58-0f36-5564-988d-3bb0596ebc4a"
 version = "0.22.4+0"
 
+[[deps.Ghostscript_jll]]
+deps = ["Artifacts", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Zlib_jll"]
+git-tree-sha1 = "38044a04637976140074d0b0621c1edf0eb531fd"
+uuid = "61579ee1-b43e-5ca0-a5da-69d92c66a64b"
+version = "9.55.1+0"
+
 [[deps.Glib_jll]]
 deps = ["Artifacts", "GettextRuntime_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Libiconv_jll", "Libmount_jll", "PCRE2_jll", "Zlib_jll"]
-git-tree-sha1 = "35fbd0cefb04a516104b8e183ce0df11b70a3f1a"
+git-tree-sha1 = "50c11ffab2a3d50192a228c313f05b5b5dc5acb2"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
-version = "2.84.3+0"
+version = "2.86.0+0"
 
 [[deps.GracefulPkg]]
 deps = ["Compat", "Pkg", "TOML"]
@@ -622,9 +566,9 @@ version = "0.9.5"
 
 [[deps.IJulia]]
 deps = ["Base64", "Conda", "Dates", "InteractiveUtils", "JSON", "Logging", "Markdown", "Pkg", "PrecompileTools", "Printf", "REPL", "Random", "SHA", "Sockets", "UUIDs", "ZMQ"]
-git-tree-sha1 = "2004107fe26a14a37c7bd9b51c006809b177b913"
+git-tree-sha1 = "87567b508ccc2ad54ee16a58c60d1c9b3eb422d0"
 uuid = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
-version = "1.30.0"
+version = "1.30.4"
 
 [[deps.IfElse]]
 git-tree-sha1 = "debdd00ffef04665ccbb3e150747a77560e8fad1"
@@ -639,6 +583,7 @@ version = "0.1.3"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+version = "1.11.0"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "e2222959fbc6c19554dc15174c81bf7bf3aa691c"
@@ -688,9 +633,9 @@ version = "0.1.0"
 
 [[deps.JpegTurbo_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "e95866623950267c1e4878846f848d94810de475"
+git-tree-sha1 = "4255f0032eafd6451d707a51d5f0248b8a165e4d"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
-version = "3.1.2+0"
+version = "3.1.3+0"
 
 [[deps.JuliaInterpreter]]
 deps = ["CodeTracking", "InteractiveUtils", "Random", "UUIDs"]
@@ -737,10 +682,10 @@ uuid = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 version = "1.4.0"
 
 [[deps.Latexify]]
-deps = ["Format", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdown", "OrderedCollections", "Requires"]
-git-tree-sha1 = "52e1296ebbde0db845b356abbbe67fb82a0a116c"
+deps = ["Format", "Ghostscript_jll", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdown", "OrderedCollections", "Requires"]
+git-tree-sha1 = "44f93c47f9cd6c7e431f2f2091fcba8f01cd7e8f"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
-version = "0.16.9"
+version = "0.16.10"
 
     [deps.Latexify.extensions]
     DataFramesExt = "DataFrames"
@@ -767,16 +712,17 @@ version = "0.6.4"
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
-version = "8.4.0+0"
+version = "8.6.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "LibGit2_jll", "NetworkOptions", "Printf", "SHA"]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
+version = "1.11.0"
 
 [[deps.LibGit2_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll"]
 uuid = "e37daf67-58a4-590a-8e99-b0245dd2ffc5"
-version = "1.6.4+0"
+version = "1.7.2+0"
 
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
@@ -785,6 +731,7 @@ version = "1.11.0+1"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+version = "1.11.0"
 
 [[deps.Libffi_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -806,25 +753,26 @@ version = "1.18.0+0"
 
 [[deps.Libmount_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "706dfd3c0dd56ca090e86884db6eda70fa7dd4af"
+git-tree-sha1 = "3acf07f130a76f87c041cfb2ff7d7284ca67b072"
 uuid = "4b2f31a3-9ecc-558c-b454-b3730dcb73e9"
-version = "2.41.1+0"
+version = "2.41.2+0"
 
 [[deps.Libtiff_jll]]
 deps = ["Artifacts", "JLLWrappers", "JpegTurbo_jll", "LERC_jll", "Libdl", "XZ_jll", "Zlib_jll", "Zstd_jll"]
-git-tree-sha1 = "4ab7581296671007fc33f07a721631b8855f4b1d"
+git-tree-sha1 = "f04133fe05eff1667d2054c53d59f9122383fe05"
 uuid = "89763e89-9b03-5906-acba-b20f662cd828"
-version = "4.7.1+0"
+version = "4.7.2+0"
 
 [[deps.Libuuid_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "d3c8af829abaeba27181db4acb485b18d15d89c6"
+git-tree-sha1 = "2a7a12fc0a4e7fb773450d17975322aa77142106"
 uuid = "38a345b3-de98-5d2b-a5d3-14cd9215e700"
-version = "2.41.1+0"
+version = "2.41.2+0"
 
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+version = "1.11.0"
 
 [[deps.LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
@@ -844,6 +792,7 @@ version = "0.3.29"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+version = "1.11.0"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
@@ -871,7 +820,7 @@ version = "1.3.1+0"
 [[deps.MPFR_jll]]
 deps = ["Artifacts", "GMP_jll", "Libdl"]
 uuid = "3a97d323-0669-5f0c-9066-3539efd106a3"
-version = "4.2.0+1"
+version = "4.2.1+0"
 
 [[deps.MacroTools]]
 git-tree-sha1 = "1e0228a030642014fe5cfe68c2c0a818f9e3f522"
@@ -887,6 +836,7 @@ version = "1.2.0"
 [[deps.Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
+version = "1.11.0"
 
 [[deps.MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "MozillaCACerts_jll", "NetworkOptions", "Random", "Sockets"]
@@ -897,7 +847,7 @@ version = "1.1.9"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.28.2+1"
+version = "2.28.6+0"
 
 [[deps.Measures]]
 git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
@@ -912,10 +862,11 @@ version = "1.2.0"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
+version = "1.11.0"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2023.1.10"
+version = "2023.12.12"
 
 [[deps.MsgPack]]
 deps = ["Serialization"]
@@ -942,12 +893,12 @@ version = "1.3.6+0"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.23+4"
+version = "0.3.27+1"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
-version = "0.8.1+4"
+version = "0.8.5+0"
 
 [[deps.OpenSSL]]
 deps = ["BitFlags", "Dates", "MozillaCACerts_jll", "OpenSSL_jll", "Sockets"]
@@ -985,9 +936,9 @@ version = "10.42.0+1"
 
 [[deps.Pango_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "FriBidi_jll", "Glib_jll", "HarfBuzz_jll", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "275a9a6d85dc86c24d03d1837a0010226a96f540"
+git-tree-sha1 = "1f7f9bbd5f7a2e5a9f7d96e51c9754454ea7f60b"
 uuid = "36c8627f-9965-5494-a995-c6b170f724f3"
-version = "1.56.3+0"
+version = "1.56.4+0"
 
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
@@ -1002,9 +953,13 @@ uuid = "30392449-352a-5448-841d-b1acce4e97dc"
 version = "0.44.2+0"
 
 [[deps.Pkg]]
-deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
+deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "Random", "SHA", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.10.0"
+version = "1.11.0"
+weakdeps = ["REPL"]
+
+    [deps.Pkg.extensions]
+    REPLExt = "REPL"
 
 [[deps.PlotThemes]]
 deps = ["PlotUtils", "Statistics"]
@@ -1019,10 +974,10 @@ uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
 version = "1.4.3"
 
 [[deps.Plots]]
-deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "PrecompileTools", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "TOML", "UUIDs", "UnicodeFun", "UnitfulLatexify", "Unzip"]
-git-tree-sha1 = "0c5a5b7e440c008fe31416a3ac9e0d2057c81106"
+deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "PrecompileTools", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "TOML", "UUIDs", "UnicodeFun", "Unzip"]
+git-tree-sha1 = "12ce661880f8e309569074a61d3767e5756a199f"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.40.19"
+version = "1.41.1"
 
     [deps.Plots.extensions]
     FileIOExt = "FileIO"
@@ -1039,10 +994,10 @@ version = "1.40.19"
     Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [[deps.Pluto]]
-deps = ["Base64", "Configurations", "Dates", "Downloads", "ExpressionExplorer", "FileWatching", "GracefulPkg", "HTTP", "HypertextLiteral", "InteractiveUtils", "LRUCache", "Logging", "LoggingExtras", "MIMEs", "Malt", "Markdown", "MsgPack", "Pkg", "PlutoDependencyExplorer", "PrecompileSignatures", "PrecompileTools", "REPL", "RegistryInstances", "RelocatableFolders", "Scratch", "Sockets", "TOML", "Tables", "URIs", "UUIDs"]
-git-tree-sha1 = "7cddd8a094d2eedf43f21be40d9090f4a5217255"
+deps = ["Base64", "Configurations", "Dates", "Downloads", "ExpressionExplorer", "FileWatching", "GracefulPkg", "HTTP", "HypertextLiteral", "InteractiveUtils", "LRUCache", "Logging", "LoggingExtras", "MIMEs", "Malt", "Markdown", "MsgPack", "Pkg", "PlutoDependencyExplorer", "PrecompileSignatures", "PrecompileTools", "REPL", "Random", "RegistryInstances", "RelocatableFolders", "Scratch", "Sockets", "TOML", "Tables", "URIs", "UUIDs"]
+git-tree-sha1 = "9d1df1e072a237e182187f1b480d2eedb3cf2f0b"
 uuid = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
-version = "0.20.17"
+version = "0.20.19"
 
 [[deps.PlutoDependencyExplorer]]
 deps = ["ExpressionExplorer", "InteractiveUtils", "Markdown"]
@@ -1076,10 +1031,11 @@ version = "0.5.7"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+version = "1.11.0"
 
 [[deps.Profile]]
-deps = ["Printf"]
 uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
+version = "1.11.0"
 
 [[deps.ProgressMeter]]
 deps = ["Distributed", "Printf"]
@@ -1129,12 +1085,14 @@ version = "2.11.2"
     Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 
 [[deps.REPL]]
-deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
+deps = ["InteractiveUtils", "Markdown", "Sockets", "StyledStrings", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
+version = "1.11.0"
 
 [[deps.Random]]
 deps = ["SHA"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+version = "1.11.0"
 
 [[deps.RationalRoots]]
 git-tree-sha1 = "e5f5db699187a4810fda9181b34250deeedafd81"
@@ -1190,6 +1148,11 @@ weakdeps = ["Distributed"]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 version = "0.7.0"
 
+[[deps.SciMLPublic]]
+git-tree-sha1 = "ed647f161e8b3f2973f24979ec074e8d084f1bee"
+uuid = "431bcebd-1456-4ced-9d72-93c2757fff0b"
+version = "1.0.0"
+
 [[deps.ScopedValues]]
 deps = ["HashArrayMappedTries", "Logging"]
 git-tree-sha1 = "c3b2323466378a2ba15bea4b2f73b081e022f473"
@@ -1204,6 +1167,7 @@ version = "1.3.0"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+version = "1.11.0"
 
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
@@ -1218,6 +1182,7 @@ version = "1.2.0"
 
 [[deps.Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
+version = "1.11.0"
 
 [[deps.SortingAlgorithms]]
 deps = ["DataStructures"]
@@ -1228,7 +1193,7 @@ version = "1.2.2"
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-version = "1.10.0"
+version = "1.11.0"
 
 [[deps.SpecialFunctions]]
 deps = ["IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
@@ -1249,16 +1214,16 @@ uuid = "860ef19b-820b-49d6-a774-d7a799459cd3"
 version = "1.0.3"
 
 [[deps.Static]]
-deps = ["CommonWorldInvalidations", "IfElse", "PrecompileTools"]
-git-tree-sha1 = "f737d444cb0ad07e61b3c1bef8eb91203c321eff"
+deps = ["CommonWorldInvalidations", "IfElse", "PrecompileTools", "SciMLPublic"]
+git-tree-sha1 = "1e44e7b1dbb5249876d84c32466f8988a6b41bbb"
 uuid = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
-version = "1.2.0"
+version = "1.3.0"
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "PrecompileTools", "Random", "StaticArraysCore"]
-git-tree-sha1 = "cbea8a6bd7bed51b1619658dec70035e07b8502f"
+git-tree-sha1 = "b8693004b385c842357406e3af647701fe783f98"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.9.14"
+version = "1.9.15"
 
     [deps.StaticArrays.extensions]
     StaticArraysChainRulesCoreExt = "ChainRulesCore"
@@ -1274,9 +1239,14 @@ uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 version = "1.4.3"
 
 [[deps.Statistics]]
-deps = ["LinearAlgebra", "SparseArrays"]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "ae3bb1eb3bba077cd276bc5cfc337cc65c3075c0"
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-version = "1.10.0"
+version = "1.11.1"
+weakdeps = ["SparseArrays"]
+
+    [deps.Statistics.extensions]
+    SparseArraysExt = ["SparseArrays"]
 
 [[deps.StatsAPI]]
 deps = ["LinearAlgebra"]
@@ -1290,10 +1260,14 @@ git-tree-sha1 = "2c962245732371acd51700dbb268af311bddd719"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 version = "0.34.6"
 
+[[deps.StyledStrings]]
+uuid = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
+version = "1.11.0"
+
 [[deps.SuiteSparse_jll]]
 deps = ["Artifacts", "Libdl", "libblastrampoline_jll"]
 uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
-version = "7.2.1+1"
+version = "7.7.0+0"
 
 [[deps.SymEngine]]
 deps = ["Compat", "Libdl", "LinearAlgebra", "RecipesBase", "Serialization", "SpecialFunctions", "SymEngine_jll"]
@@ -1344,6 +1318,7 @@ version = "0.1.1"
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+version = "1.11.0"
 
 [[deps.TranscodingStreams]]
 git-tree-sha1 = "0c45878dcfdcfa8480052b6ab162cdd138781742"
@@ -1363,39 +1338,17 @@ version = "1.6.1"
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+version = "1.11.0"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+version = "1.11.0"
 
 [[deps.UnicodeFun]]
 deps = ["REPL"]
 git-tree-sha1 = "53915e50200959667e78a92a418594b428dffddf"
 uuid = "1cfade01-22cf-5700-b092-accc4b62d6e1"
 version = "0.4.1"
-
-[[deps.Unitful]]
-deps = ["Dates", "LinearAlgebra", "Random"]
-git-tree-sha1 = "6258d453843c466d84c17a58732dda5deeb8d3af"
-uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
-version = "1.24.0"
-
-    [deps.Unitful.extensions]
-    ConstructionBaseUnitfulExt = "ConstructionBase"
-    ForwardDiffExt = "ForwardDiff"
-    InverseFunctionsUnitfulExt = "InverseFunctions"
-    PrintfExt = "Printf"
-
-    [deps.Unitful.weakdeps]
-    ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
-    ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-    InverseFunctions = "3587e190-3f89-42d0-90ee-14403ec27112"
-    Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
-
-[[deps.UnitfulLatexify]]
-deps = ["LaTeXStrings", "Latexify", "Unitful"]
-git-tree-sha1 = "af305cc62419f9bd61b6644d19170a4d258c7967"
-uuid = "45397f5d-5981-4c77-b2b3-fc36d6e9b728"
-version = "1.7.0"
 
 [[deps.Unzip]]
 git-tree-sha1 = "ca0969166a028236229f63514992fc073799bb78"
@@ -1475,9 +1428,9 @@ version = "1.3.7+0"
 
 [[deps.Xorg_libXfixes_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libX11_jll"]
-git-tree-sha1 = "9caba99d38404b285db8801d5c45ef4f4f425a6d"
+git-tree-sha1 = "75e00946e43621e09d431d9b95818ee751e6b2ef"
 uuid = "d091e8ba-531a-589c-9de9-94069b037ed8"
-version = "6.0.1+0"
+version = "6.0.2+0"
 
 [[deps.Xorg_libXi_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libXext_jll", "Xorg_libXfixes_jll"]
@@ -1517,9 +1470,9 @@ version = "1.1.3+0"
 
 [[deps.Xorg_xcb_util_cursor_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_jll", "Xorg_xcb_util_renderutil_jll"]
-git-tree-sha1 = "c5bf2dad6a03dfef57ea0a170a1fe493601603f2"
+git-tree-sha1 = "9750dc53819eba4e9a20be42349a6d3b86c7cdf8"
 uuid = "e920d4aa-a673-5f3a-b3d7-f755a4d47c43"
-version = "0.1.5+0"
+version = "0.1.6+0"
 
 [[deps.Xorg_xcb_util_image_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_xcb_util_jll"]
@@ -1570,10 +1523,10 @@ uuid = "c5fb5394-a638-5e4d-96e5-b29de1b5cf10"
 version = "1.6.0+0"
 
 [[deps.ZMQ]]
-deps = ["FileWatching", "PrecompileTools", "Sockets", "ZeroMQ_jll"]
-git-tree-sha1 = "2d060e1f014c07561817bf6f3c0eb66b309e04bd"
+deps = ["FileWatching", "PrecompileTools", "Printf", "Sockets", "ZeroMQ_jll"]
+git-tree-sha1 = "c398a0a905ed975308b433f013af388b65b10cb6"
 uuid = "c2297ded-f4af-51ae-bb23-16f91089e4e1"
-version = "1.4.1"
+version = "1.5.0"
 
 [[deps.ZeroMQ_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "libsodium_jll"]
@@ -1672,7 +1625,7 @@ version = "1.1.7+0"
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
-version = "1.52.0+1"
+version = "1.59.0+0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1699,27 +1652,18 @@ version = "1.9.2+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─79374db5-1fbd-4499-b8d9-c7b840bdee52
-# ╟─8d491602-2e68-4ce9-b949-859f91cfee9d
-# ╠═fd4ef417-311f-43aa-a601-bf8a9d66b890
-# ╟─956d7bd6-d59f-4daa-88b6-9b8879918d79
-# ╠═b0f8586c-db7e-4872-b4e3-ff6beafb4c6c
-# ╟─4c2b4d2a-4b34-4f6a-9690-6efc9f2d3fea
-# ╠═e9325c21-5136-49bd-b9e4-77924560b4e2
-# ╠═571405c1-0f1f-4cb5-88dd-31e4f9afc74d
-# ╟─b0619394-8dc7-43d0-b419-387eaaf9fe6b
-# ╠═d557472b-3056-4b6b-830c-dcfcbba34a27
-# ╟─5b12989c-8069-4f42-96af-963881db0df2
-# ╠═b47294f2-626b-48c2-80fb-e326ea88d692
-# ╟─b6575a7f-43a2-4bc6-ae0c-efa6e182eb20
-# ╠═4e7dbd4d-28c7-47c2-befb-d756e1c413ed
-# ╠═6b391ff1-7605-4679-9673-5229c07562a4
-# ╟─76823179-81b9-4c02-afbe-f415be01996d
-# ╠═998e3082-bb78-4add-a564-8cde78e136e9
-# ╠═85b4f8e2-38c4-43e2-b97e-a9c8e2050479
-# ╟─7eab1e4b-ab7d-4012-9b5d-9f96d2d989ea
-# ╠═5bfe0fea-a3a9-4ca8-8e8e-33b3f6048e27
-# ╟─f9f9639f-68e0-4ee5-8cb4-9328ac4d76b3
-# ╠═759da271-0adf-4ae7-9642-8620c4c34690
+# ╠═3f1b2fc1-db62-4995-ae1a-4028748a1e73
+# ╠═bda25162-640e-406e-aa7f-4bc468d688ba
+# ╠═62c519ca-92b0-4c0b-8b18-fa4685a0c0ac
+# ╠═8b6f9e43-7e97-4e14-8aff-087da7b855fb
+# ╠═e35b1873-d547-4be4-a59e-3dcb3668d225
+# ╠═450c1243-e855-416a-b793-545451a27026
+# ╠═67b75fff-cea3-4d03-a8e8-ba0e4a6e4bd8
+# ╠═ec8deef3-9202-484a-adb0-10b4b6bab9fc
+# ╠═55060d8d-9af0-420b-8291-7e9e77ae0da1
+# ╠═d029a88b-f6b4-43c1-a2f8-68a230289352
+# ╠═588e5480-99df-406e-90b2-523df9190f02
+# ╠═985242fb-5dc8-4317-93fd-c90ac8b882fb
+# ╠═deea0ee7-bfb2-4290-b687-764a91bdc522
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

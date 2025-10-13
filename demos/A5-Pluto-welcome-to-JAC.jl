@@ -5,7 +5,15 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ fd4ef417-311f-43aa-a601-bf8a9d66b890
-using JenaAtomicCalculator, SymEngine
+using JenaAtomicCalculator
+
+# ╔═╡ 2d8989c9-f09d-4794-b352-1ee66e7d8764
+begin
+	Defaults.convertUnits("energy: from atomic", 1.0)
+	Defaults.convertUnits("energy: from atomic to Kayser", 1.0)
+	using Printf
+	Printf.@sprintf("%.4e", Defaults.convertUnits("energy: from atomic", 1.0))
+end
 
 # ╔═╡ 79374db5-1fbd-4499-b8d9-c7b840bdee52
 html"""
@@ -21,133 +29,103 @@ html"""
 
 # ╔═╡ 8d491602-2e68-4ce9-b949-859f91cfee9d
 md"""
-# Simplify Racah expressions by means of sum rules
+# Welcome to JAC (again)
+"""
+
+# ╔═╡ 75061d53-4fb7-45a6-b8bb-c199d52479da
+md"""
+Having set the stages for JAC, let us welcome you to the program again. **JAC provides tools for performing atomic (structure) calculations of different kinds and complexity.** Apart from the computation of atomic (many-electron) amplitudes, properties and processes, JAC supports interactive, restricted-active space (RAS) and cascade computations. It also help perform a few simple hydrogenic and semi-empirical estimates as well as simplify symbolic expressions from Racah's algebra; please, see the documentation for further details.
+"""
+
+# ╔═╡ d33decc6-4a3a-4abc-b65b-2d2a98a38dae
+md"""
+To make use of JAC, we simply say:
 """
 
 # ╔═╡ 956d7bd6-d59f-4daa-88b6-9b8879918d79
 md"""
-**Note:** The Julia package `SymEngine` is needed to perform symbolic simplifications of Racah algebra expressions in JAC but, by default, is not automatically loaded.
+In the design of JAC, we first of all **aim for a precise language** that (i) is simple enough for both, seldom and a more frequent use of this package, (ii) highlights the underlying physics and (iii) avoids most technical slang that is often unnecessary but quite common to many other codes. An intuitive picture about the level or hyperfine structure of an atom, its properties as well as possible excitation and/or decay processes should (always) come first in order to generate the desired data: By making use of suitable data types (struct), **we indeed wish to introduce a language close to the underlying formalism.**
+"""
 
-As mentioned before, the (data) type `RacahExpression` is very central to applying the techniques from Racah's algebra; see *LiveDocs*. This data type enables one to comprise -- less or more -- sophisticated expressions into a single Julia variable and to attempt its simplification by a set of internal (sum) rules. As seen from the definition of this (data) struct, the different 'delta' and Wigner symbols of such an expression are kept and maintained separately, so that the known sum rules can be applied more readily. Moreover, the last constructor of a `RacahExpression` shows that it quite simple to overwrite or extent an already existing RacahExpression, starting from a simple 𝟙:
+# ╔═╡ 815eab79-f1f9-4654-874c-afef4bb1b331
+md"""
+While JAC is overall based on a rather large number of such types, a few simple examples are: \
+	+ (atomic) Shell: ``1s, 2s, 2p, ...`` \
+	+ Subshell: ``1s_{1/2}, 2s_{1/2}, 2p_{1/2}, 2p_{3/2}, ...`` \
+	+ (electron) Configuration: ``1s^2 2s^2 2p^6 3s`` or ``[Ne] 3s, ...`` \
+	+ Level: ``1s^2 2s^2\;\: ^1S_0``, ...  \
+
+and many other terms (types) that we shall explain later. --- Let us simply start, for instance, with specifying and assigning the and shells:
 """
 
 # ╔═╡ b0f8586c-db7e-4872-b4e3-ff6beafb4c6c
-RacahExpression()
+begin
+	w1s = Shell("1s")
+	w2p = Shell("2p")
+	Subshell("2p_1/2"),   Subshell("2p_3/2")  
+end
 
 # ╔═╡ 4c2b4d2a-4b34-4f6a-9690-6efc9f2d3fea
 md"""
-Perhaps, the simplest sum rules refer to the orthogonality of the Wigner 3-j and 6-j symbols; for example, the Wigner 6-j symbols fullfill the following orthogonality relations which can be displayed (just for illustration here) by looking up `RacahAlgebra.sumRulesForTwoW6j`. Both of the shown rules show that a summation over the product of two Wigner 6-j symbols can be re-written just in terms of some quantum numbers and triangle conditions. Note that $[a,b,...] = (2a+1)\: (2b+1)\: ...$. More general, all the implemented sum rules are displayed as inline comments in the code, although not as docstrings (apart from this particular function here).
-
-*Typically, only some standard form of each sum rule is shown in the literature*, and many of these sum rules are just displayed in quite specialized texts about angular momenta. Likely, the most comprehensive compilation of these (and many other) rules can be found in the **monograph by Varshalovich et al. (1988)**. --- In general, however, one needs to recognize all the symmetries of a Racah expressions, implying all the phases and possible (weight) factors that arise from these symmetries. In JAC, this is realized by cycling automatically through all symmetric forms of the Wigner n-j (n = 3,6,9) symbols. In a later step, we also plan to take the spherical harmonics and the Wigner rotation matrices into account as well into the internal representation of a RacahExpression.
-
-Again, let us first declare some Basic variables which we can later apply to define our first `RacahExpression`:
+In JAC, we make use of these `Shell`'s and `Subshell`'s whenever they will naturally occur in describing the level structure or the excitation, decay or occupation of an atom, and this both at input and output. If you have forgotten how to specify such a subshell (constructor), looks at the *LiveDocs* for them. --- Of course, we can interactively also specify any electron configuration:
 """
 
-# ╔═╡ e9325c21-5136-49bd-b9e4-77924560b4e2
+# ╔═╡ bbd3211e-8ff3-497e-960c-2c8ab04fd7f9
 begin
-	a = Basic(:a);    b = Basic(:b);    c = Basic(:c);    d  = Basic(:d);    ee  = Basic(:ee);    f  = Basic(:f)
-	g = Basic(:g);    h = Basic(:h);    k = Basic(:k);    l  = Basic(:l);    p   = Basic(:p);     q  = Basic(:q);     
-	r = Basic(:r);    s = Basic(:s);    t = Basic(:t);    X  = Basic(:X);    Y   = Basic(:Y);     Z  = Basic(:Z);
+	wc1 = Configuration("1s^2 2s^2 2p^5")
+	wc2 = Configuration("[Ar] 4s^2 3d^5")
 end
-
-# ╔═╡ 571405c1-0f1f-4cb5-88dd-31e4f9afc74d
-begin
-	aw6j = W6j(X, Y, Z, a, b ,c);    bw6j = W6j(X, Y, Z, a, b ,c)
-	rex  = RacahExpression( [X, Y, Z], Integral[], Basic(0), Basic((2*X+1)*(2*Y+1)*(2*Z+1)), 
-                            Kronecker[], Triangle[], W3j[], W6j[aw6j, bw6j], W9j[], Ylm[], Djpq[] )
-end
-
-# ╔═╡ b0619394-8dc7-43d0-b419-387eaaf9fe6b
-md"""
-As before, we can simply evaluate this expression which attempts to apply one of the -- more than 45 implemented -- sum rules in order to reduce either the number of Wigner symbols and/or the number of summation indices:
-"""
-
-# ╔═╡ d557472b-3056-4b6b-830c-dcfcbba34a27
-RacahAlgebra.evaluate(rex)
-
-# ╔═╡ 5b12989c-8069-4f42-96af-963881db0df2
-md"""
-This example looks perhaps quite *over-simplified* as we could use exactly the *orthogonaly relation* from above to get this result. However, the same simplification also works if we first randomly re-write the given Racah expression and then attempt its simplification again.
-"""
-
-# ╔═╡ b47294f2-626b-48c2-80fb-e326ea88d692
-begin
-	rex2 = RacahAlgebra.equivalentForm(rex);   @show rex2
-	RacahAlgebra.evaluate(rex2)
-end
-
-# ╔═╡ b6575a7f-43a2-4bc6-ae0c-efa6e182eb20
-md"""
-You may test this simplification several times for (randomly) different equivalent forms of `rex` and, likely, will receive slightly different results with regard to the number of symbols and summations. This is related to the **phase issue**, which refers to the fact that it is not easy to always recognize how the overall phase can be re-written internally so that a particular sum rule applies. Here, we note that the application of any sum rule always requests that all other parts of the given Racah expression, including its overall phase, must be independent of those parts which are to be removed. Further (formal) improvement on this **phase issue** might be possible but, sometimes, these equivalences need to be recognized and corrected manually.
-
-Of course, we can simplify also less obvious Racah expressions, such as:
-"""
-
-# ╔═╡ 4e7dbd4d-28c7-47c2-befb-d756e1c413ed
-begin
-	cw6j = W6j(a, b, X, c, d, p);    dw6j = W6j(c, d, X, b, a, q)
-	rex3 = RacahExpression( [X], Integral[], Basic(X), Basic(2*X+1), Kronecker[], Triangle[], W3j[], W6j[cw6j, dw6j], W9j[], Ylm[], Djpq[] )
-	@show rex3
-	rex4  = RacahAlgebra.equivalentForm(rex3)
-	RacahAlgebra.evaluate(rex4)
-end
-
-# ╔═╡ 6b391ff1-7605-4679-9673-5229c07562a4
-begin
-	ew6j = W6j(a, f, X, ee, b, s);   fw9j = W9j(a, f, X, d, q, ee, p, c, b)
-	rex5 = RacahExpression( [X], Integral[], Basic(0), Basic(2*X+1), Kronecker[], Triangle[], W3j[], W6j[ew6j], W9j[fw9j], Ylm[], Djpq[] )
-	@show rex
-	rex6 = RacahAlgebra.equivalentForm(rex5)
-	RacahAlgebra.evaluate(rex6)
-end
-
-# ╔═╡ 76823179-81b9-4c02-afbe-f415be01996d
-md"""
-Apart from these quite simple expressions, much more complex ones rapidly arise if angular momenta are coupled together or re-coupled in order to allow the simplification of many-particle matrix elements.
-
-In the next example, we shall consider the (so-called) re-coupling coefficients $ < (j_1, j_2) J_{12}, j_3: JM| j_1, (j_2,j_3) J_{23}: JM >$ which is known to be independent of $M$. The expression of this re-coupling coefficient can be written down quite easily by applying twice a Clesch-Gordan expansion on both sides of the 'overlap matrix element'. Simple manipulations gives immediately rise to the `RacahExpression`:
-"""
-
-# ╔═╡ 998e3082-bb78-4add-a564-8cde78e136e9
-begin
-	j1   = Basic(:j1);    j2 = Basic(:j2);    j3 = Basic(:j3);    J12 = Basic(:J12);    J23 = Basic(:J23);    J = Basic(:J)
-	m1   = Basic(:m1);    m2 = Basic(:m2);    m3 = Basic(:m3);    M12 = Basic(:M12);    M23 = Basic(:M23);    M = Basic(:M)
-	w3ja = W3j(J12, j3, J, M12, m3, -M);        w3jb = W3j(j1, j2, J12, m1, m2, -M12)       
-	w3jc = W3j(j2, j3, J23, m2, m3, -M23);      w3jd = W3j(j1, J23, J, m1, M23, -M)   
-end
-
-# ╔═╡ 85b4f8e2-38c4-43e2-b97e-a9c8e2050479
-begin
-	rex7 = RacahExpression( [m1, m2, m3, M12, M23], Integral[], -J12 + 2*j3 - 2*M - 2*j1 - M12 - M23 + J23, 
-          	  (2*J+1) * sqrt( (2*J12+1)*(2*J23+1) ), Kronecker[], Triangle[], [w3ja, w3jb, w3jc, w3jd], W6j[], W9j[], Ylm[], Djpq[] )
-
-end
-
-# ╔═╡ 7eab1e4b-ab7d-4012-9b5d-9f96d2d989ea
-md"""
-which includes a five-fold summation (three further summations, for instance, for $m_1', m_2', m_3'$, and can be simplified because of the assumed normalization of the $|j_p m_p > $ states of all subsystems). Here, the simplification of this RacahExpression is already harder to see but can be obtained by calling:
-"""
-
-# ╔═╡ 5bfe0fea-a3a9-4ca8-8e8e-33b3f6048e27
-RacahAlgebra.evaluate(rex7)
-
-# ╔═╡ f9f9639f-68e0-4ee5-8cb4-9328ac4d76b3
-md"""
-The given recoupling coefficient is obviously independent of $M$ and just given by a Wigner 6j symbol times some rather trivial (delta) factors. A closer inspection of the Wigner symbol also enables one to express the phase in a slightly more convinient form.
-"""
 
 # ╔═╡ 759da271-0adf-4ae7-9642-8620c4c34690
+md"""
+This input just shows three (very) simple examples and how the details of some computation can be readily specified in line with our basic understanding of the atomic shell model.You can look at the documentation for a complete list of most data structures that are speficic to the JAC module. --- The use of a proper terminology and data structures has been found essential for developing the JAC module. Although we presently support just a (more or less small) number of frequently requested tasks in atomic structure and collision theory, we tried to define data types that are flexible enough to further extend these tools in the future. Following the Julia's standard conventions, all types (struct) are named in CamelCase notation. The power of these data types lays not in their number but in the consistency of how they are declared and utilized internally. It is the aim of the documentation as well as these (Pluto) notebooks to show the user how one can benefit from a proper set of such data types (`struct`'s) without that one needs to know all of them nor the details how they are defined. 
+"""
 
+# ╔═╡ 055f695a-1307-4a81-917a-f3efe9b1ab1f
+md"""
+**Use of physical units:** Of course, there are many other features that make Julia & JAC as powerful as it is: For example, the user may pre-define and overwrite the units in which he wishes to communicate with JAC. These units determine how (most of) the input data are interpreted as well as output data are displayed in tabulations or to screen. The current defaults settings for the units can be seen by typing:
+"""
+
+# ╔═╡ 13fe0a92-e138-4f16-9051-a80302b3d46a
+Basics.display("settings")
+
+# ╔═╡ 41599617-1b88-4815-90a5-79f967c9ea04
+md"""
+which show that energies are taken/printed in eV, rates in 1/s, etc. Apart from modifying these defaults directly in the source code, the **can be overwritten by the user at any time of the program executation**. This is done by means of the function `Defaults.setDefaults` which enables one to re-define various global values of JAC. If we wish to enter/display energies in Kaysers or cross sections in atomic units, we can simply type: 
+"""
+
+# ╔═╡ 06742b88-807b-4a7d-af3f-1cbc20660a3f
+begin
+	Defaults.setDefaults("unit: energy", "Kayser")
+	Defaults.setDefaults("unit: cross section", "a.u.")
+	Basics.display("settings")
+end
+
+# ╔═╡ 378d2c6c-2ebe-4ebe-86ea-0c27df79037d
+md"""
+Apart from the default units, one can similarly overwrite the method that is use for the generation and normalization of continuum orbitals and several others. Although called global, the corresponding values can be accesses just in two ways. (i) The global constants, such as the electron mass, the speed of light, the fine-structure constant, etc., are accessed via the function `Defaults.getDefaults` 
+"""
+
+# ╔═╡ d937ddee-3122-4b2d-8c10-1a76f4541ffa
+begin
+	Defaults.getDefaults("alpha")
+	Defaults.getDefaults("electron rest energy")
+	Defaults.getDefaults("unit: energy")
+end
+
+# ╔═╡ 92bbbefa-44da-4f2f-b548-7e828557107d
+md"""
+(ii) These global values are frequently applied in order to -- internally or externally -- convert physical numbers into units of the same dimension. This is done by the function `Defaults.convertUnits`. In JAC, the call of this function is often combined with some proper formatting of the results.
+"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 JenaAtomicCalculator = "830ae420-d14d-11e8-2f94-6b071437414d"
-SymEngine = "123dc426-2d89-5057-bbad-38513e3affd8"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
 JenaAtomicCalculator = "~0.1.0"
-SymEngine = "~0.12.0"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -156,7 +134,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.9"
 manifest_format = "2.0"
-project_hash = "50ee68bcc49840e277b1262e65524be0e279dead"
+project_hash = "a13f566917656cc1f8ba0bf07c284baddd647fdd"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -1701,25 +1679,22 @@ version = "1.9.2+0"
 # ╔═╡ Cell order:
 # ╟─79374db5-1fbd-4499-b8d9-c7b840bdee52
 # ╟─8d491602-2e68-4ce9-b949-859f91cfee9d
+# ╟─75061d53-4fb7-45a6-b8bb-c199d52479da
+# ╟─d33decc6-4a3a-4abc-b65b-2d2a98a38dae
 # ╠═fd4ef417-311f-43aa-a601-bf8a9d66b890
 # ╟─956d7bd6-d59f-4daa-88b6-9b8879918d79
+# ╟─815eab79-f1f9-4654-874c-afef4bb1b331
 # ╠═b0f8586c-db7e-4872-b4e3-ff6beafb4c6c
 # ╟─4c2b4d2a-4b34-4f6a-9690-6efc9f2d3fea
-# ╠═e9325c21-5136-49bd-b9e4-77924560b4e2
-# ╠═571405c1-0f1f-4cb5-88dd-31e4f9afc74d
-# ╟─b0619394-8dc7-43d0-b419-387eaaf9fe6b
-# ╠═d557472b-3056-4b6b-830c-dcfcbba34a27
-# ╟─5b12989c-8069-4f42-96af-963881db0df2
-# ╠═b47294f2-626b-48c2-80fb-e326ea88d692
-# ╟─b6575a7f-43a2-4bc6-ae0c-efa6e182eb20
-# ╠═4e7dbd4d-28c7-47c2-befb-d756e1c413ed
-# ╠═6b391ff1-7605-4679-9673-5229c07562a4
-# ╟─76823179-81b9-4c02-afbe-f415be01996d
-# ╠═998e3082-bb78-4add-a564-8cde78e136e9
-# ╠═85b4f8e2-38c4-43e2-b97e-a9c8e2050479
-# ╟─7eab1e4b-ab7d-4012-9b5d-9f96d2d989ea
-# ╠═5bfe0fea-a3a9-4ca8-8e8e-33b3f6048e27
-# ╟─f9f9639f-68e0-4ee5-8cb4-9328ac4d76b3
-# ╠═759da271-0adf-4ae7-9642-8620c4c34690
+# ╠═bbd3211e-8ff3-497e-960c-2c8ab04fd7f9
+# ╟─759da271-0adf-4ae7-9642-8620c4c34690
+# ╟─055f695a-1307-4a81-917a-f3efe9b1ab1f
+# ╠═13fe0a92-e138-4f16-9051-a80302b3d46a
+# ╟─41599617-1b88-4815-90a5-79f967c9ea04
+# ╠═06742b88-807b-4a7d-af3f-1cbc20660a3f
+# ╟─378d2c6c-2ebe-4ebe-86ea-0c27df79037d
+# ╠═d937ddee-3122-4b2d-8c10-1a76f4541ffa
+# ╟─92bbbefa-44da-4f2f-b548-7e828557107d
+# ╠═2d8989c9-f09d-4794-b352-1ee66e7d8764
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

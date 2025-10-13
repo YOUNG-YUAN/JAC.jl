@@ -160,6 +160,52 @@ function Base.string(property::EmProperty)
 end
 
 
+"""
+`struct  EmPropertyC`  ... defines a type to maintain two gauge forms of a computed result that depends on the radiation field.
+
+    + Coulomb         ::Complex{Float64}    ... (Complex) Value for the Coulomb gauge of the radiation field.
+    + Babushkin       ::Complex{Float64}    ... (Complex) Value for the Coulomb gauge of the radiation field.
+"""
+struct  EmPropertyC 
+    Coulomb           ::Complex{Float64}
+    Babushkin         ::Complex{Float64}
+end
+
+export EmPropertyC
+
+
+"""
+`Basics.EmPropertyC(wa::Float64)`  ... constructor for an `constant` instance of EmPropertyC.
+"""
+function EmPropertyC(wa::Float64)
+    EmPropertyC(wa, wa)
+end
+
+
+Base.:+(a::EmPropertyC, b::EmPropertyC) = EmPropertyC(a.Coulomb + b.Coulomb, a.Babushkin + b.Babushkin)
+Base.:+(a::EmPropertyC, b) = EmPropertyC(a.Coulomb + b, a.Babushkin + b)
+Base.:+(a, b::EmPropertyC) = b + a
+Base.:-(a::EmPropertyC, b::EmPropertyC) = EmPropertyC(a.Coulomb - b.Coulomb, a.Babushkin - b.Babushkin)
+Base.:*(a::EmPropertyC, b::EmPropertyC) = EmPropertyC(a.Coulomb * b.Coulomb, a.Babushkin * b.Babushkin)
+Base.:*(a, b::EmPropertyC) = EmPropertyC(a * b.Coulomb, a * b.Babushkin)
+Base.:*(a::EmPropertyC, b) = EmPropertyC(a.Coulomb * b, a.Babushkin * b)
+Base.:/(a::EmPropertyC, b::EmPropertyC) = EmPropertyC(a.Coulomb / b.Coulomb, a.Babushkin / b.Babushkin)
+Base.:/(a, b::EmPropertyC) = EmPropertyC(a / b.Coulomb, a / b.Babushkin)
+
+
+# `Base.show(io::IO, property::EmPropertyC)`  ... prepares a proper printout of the variable property::EmPropertyC.
+function Base.show(io::IO, property::EmPropertyC) 
+    sa = Base.string(property);                print(io, sa)
+end
+
+
+# `Base.string(property::EmPropertyC)`  ... provides a String notation for the variable property::EmPropertyC.
+function Base.string(property::EmPropertyC)
+    sa = "$(property.Coulomb) [Coulomb],  $(property.Babushkin) [Babushkin]"
+    return( sa )
+end
+
+
 #################################################################################################################################
 #################################################################################################################################
 
@@ -470,35 +516,6 @@ end
 function subshell_2j(sh::Subshell)
     return( 2* abs(sh.kappa) - 1 )   
 end
-
-
-#== August 2025, just moved
-"""
-`Basics.subshellsFromClosedShellConfiguration("[Ne]")`  
-    ... to provide a list of (relativistic) subshells for the given closed-shell configuration.
-"""
-function subshellsFromClosedShellConfiguration(sa::String)
-    if       sa == "[He]"    wa = [ Subshell("1s_1/2")]    
-    elseif   sa == "[Ne]"    wa = [ Subshell("1s_1/2"), Subshell("2s_1/2"), Subshell("2p_1/2"), Subshell("2p_3/2")]   
-    elseif   sa == "[Mg]"    wa = [ Subshell("1s_1/2"), Subshell("2s_1/2"), Subshell("2p_1/2"), Subshell("2p_3/2"), Subshell("3s_1/2")]   
-    elseif   sa == "[Ar]"    wa = [ Subshell("1s_1/2"), Subshell("2s_1/2"), Subshell("2p_1/2"), Subshell("2p_3/2"), 
-                                                        Subshell("3s_1/2"), Subshell("3p_1/2"), Subshell("3p_3/2")]   
-    elseif   sa == "[Kr]"    wa = [ Subshell("1s_1/2"), Subshell("2s_1/2"), Subshell("2p_1/2"), Subshell("2p_3/2"), 
-                                                        Subshell("3s_1/2"), Subshell("3p_1/2"), Subshell("3p_3/2"),   
-                                                        Subshell("3d_3/2"), Subshell("3d_5/2"), 
-                                    Subshell("4s_1/2"), Subshell("4p_1/2"), Subshell("4p_3/2")]   
-    elseif   sa == "[Xe]"    wa = [ Subshell("1s_1/2"), Subshell("2s_1/2"), Subshell("2p_1/2"), Subshell("2p_3/2"), 
-                                                        Subshell("3s_1/2"), Subshell("3p_1/2"), Subshell("3p_3/2"),   
-                                                        Subshell("3d_3/2"), Subshell("3d_5/2"), 
-                                    Subshell("4s_1/2"), Subshell("4p_1/2"), Subshell("4p_3/2"), 
-                                                        Subshell("4d_3/2"), Subshell("4d_5/2"), 
-                                    Subshell("5s_1/2"), Subshell("5p_1/2"), Subshell("5p_3/2")]   
-    else
-        error("Unsupported keystring = $sa ")
-    end
-    
-    return( wa )
-end  ==#
 
 #################################################################################################################################
 #################################################################################################################################

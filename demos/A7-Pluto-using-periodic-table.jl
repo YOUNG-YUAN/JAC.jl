@@ -5,7 +5,10 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ fd4ef417-311f-43aa-a601-bf8a9d66b890
-using JenaAtomicCalculator, SymEngine
+using JenaAtomicCalculator
+
+# ╔═╡ a460393c-4c10-473d-9c27-0e5d032e2f58
+using Markdown, InteractiveUtils
 
 # ╔═╡ 79374db5-1fbd-4499-b8d9-c7b840bdee52
 html"""
@@ -21,133 +24,299 @@ html"""
 
 # ╔═╡ 8d491602-2e68-4ce9-b949-859f91cfee9d
 md"""
-# Simplify Racah expressions by means of sum rules
+# Obtaining data from the periodic table
 """
 
 # ╔═╡ 956d7bd6-d59f-4daa-88b6-9b8879918d79
 md"""
-**Note:** The Julia package `SymEngine` is needed to perform symbolic simplifications of Racah algebra expressions in JAC but, by default, is not automatically loaded.
-
-As mentioned before, the (data) type `RacahExpression` is very central to applying the techniques from Racah's algebra; see *LiveDocs*. This data type enables one to comprise -- less or more -- sophisticated expressions into a single Julia variable and to attempt its simplification by a set of internal (sum) rules. As seen from the definition of this (data) struct, the different 'delta' and Wigner symbols of such an expression are kept and maintained separately, so that the known sum rules can be applied more readily. Moreover, the last constructor of a `RacahExpression` shows that it quite simple to overwrite or extent an already existing RacahExpression, starting from a simple 𝟙:
+Most atomic computations require input that is specific for some given element or isotope. This information can often be easily read from the Periodic Table of Elements and have to be provided to JAC, wherever necessary. In other situations, it may be helpful to have these data also available within the same toolbox. To obtain for instance the nuclear charge of some element with known symbol, one can call the function `PeriodicTable.getAtomicNumber` [cf. *LiveDocs*] where symbols are defined in Julia by the syntax: 
 """
 
 # ╔═╡ b0f8586c-db7e-4872-b4e3-ff6beafb4c6c
-RacahExpression()
+[:He, :Ne, :Ar]
 
 # ╔═╡ 4c2b4d2a-4b34-4f6a-9690-6efc9f2d3fea
-md"""
-Perhaps, the simplest sum rules refer to the orthogonality of the Wigner 3-j and 6-j symbols; for example, the Wigner 6-j symbols fullfill the following orthogonality relations which can be displayed (just for illustration here) by looking up `RacahAlgebra.sumRulesForTwoW6j`. Both of the shown rules show that a summation over the product of two Wigner 6-j symbols can be re-written just in terms of some quantum numbers and triangle conditions. Note that $[a,b,...] = (2a+1)\: (2b+1)\: ...$. More general, all the implemented sum rules are displayed as inline comments in the code, although not as docstrings (apart from this particular function here).
-
-*Typically, only some standard form of each sum rule is shown in the literature*, and many of these sum rules are just displayed in quite specialized texts about angular momenta. Likely, the most comprehensive compilation of these (and many other) rules can be found in the **monograph by Varshalovich et al. (1988)**. --- In general, however, one needs to recognize all the symmetries of a Racah expressions, implying all the phases and possible (weight) factors that arise from these symmetries. In JAC, this is realized by cycling automatically through all symmetric forms of the Wigner n-j (n = 3,6,9) symbols. In a later step, we also plan to take the spherical harmonics and the Wigner rotation matrices into account as well into the internal representation of a RacahExpression.
-
-Again, let us first declare some Basic variables which we can later apply to define our first `RacahExpression`:
-"""
-
-# ╔═╡ e9325c21-5136-49bd-b9e4-77924560b4e2
-begin
-	a = Basic(:a);    b = Basic(:b);    c = Basic(:c);    d  = Basic(:d);    ee  = Basic(:ee);    f  = Basic(:f)
-	g = Basic(:g);    h = Basic(:h);    k = Basic(:k);    l  = Basic(:l);    p   = Basic(:p);     q  = Basic(:q);     
-	r = Basic(:r);    s = Basic(:s);    t = Basic(:t);    X  = Basic(:X);    Y   = Basic(:Y);     Z  = Basic(:Z);
-end
-
-# ╔═╡ 571405c1-0f1f-4cb5-88dd-31e4f9afc74d
-begin
-	aw6j = W6j(X, Y, Z, a, b ,c);    bw6j = W6j(X, Y, Z, a, b ,c)
-	rex  = RacahExpression( [X, Y, Z], Integral[], Basic(0), Basic((2*X+1)*(2*Y+1)*(2*Z+1)), 
-                            Kronecker[], Triangle[], W3j[], W6j[aw6j, bw6j], W9j[], Ylm[], Djpq[] )
-end
-
-# ╔═╡ b0619394-8dc7-43d0-b419-387eaaf9fe6b
-md"""
-As before, we can simply evaluate this expression which attempts to apply one of the -- more than 45 implemented -- sum rules in order to reduce either the number of Wigner symbols and/or the number of summation indices:
-"""
-
-# ╔═╡ d557472b-3056-4b6b-830c-dcfcbba34a27
-RacahAlgebra.evaluate(rex)
-
-# ╔═╡ 5b12989c-8069-4f42-96af-963881db0df2
-md"""
-This example looks perhaps quite *over-simplified* as we could use exactly the *orthogonaly relation* from above to get this result. However, the same simplification also works if we first randomly re-write the given Racah expression and then attempt its simplification again.
-"""
-
-# ╔═╡ b47294f2-626b-48c2-80fb-e326ea88d692
-begin
-	rex2 = RacahAlgebra.equivalentForm(rex);   @show rex2
-	RacahAlgebra.evaluate(rex2)
-end
-
-# ╔═╡ b6575a7f-43a2-4bc6-ae0c-efa6e182eb20
-md"""
-You may test this simplification several times for (randomly) different equivalent forms of `rex` and, likely, will receive slightly different results with regard to the number of symbols and summations. This is related to the **phase issue**, which refers to the fact that it is not easy to always recognize how the overall phase can be re-written internally so that a particular sum rule applies. Here, we note that the application of any sum rule always requests that all other parts of the given Racah expression, including its overall phase, must be independent of those parts which are to be removed. Further (formal) improvement on this **phase issue** might be possible but, sometimes, these equivalences need to be recognized and corrected manually.
-
-Of course, we can simplify also less obvious Racah expressions, such as:
-"""
-
-# ╔═╡ 4e7dbd4d-28c7-47c2-befb-d756e1c413ed
-begin
-	cw6j = W6j(a, b, X, c, d, p);    dw6j = W6j(c, d, X, b, a, q)
-	rex3 = RacahExpression( [X], Integral[], Basic(X), Basic(2*X+1), Kronecker[], Triangle[], W3j[], W6j[cw6j, dw6j], W9j[], Ylm[], Djpq[] )
-	@show rex3
-	rex4  = RacahAlgebra.equivalentForm(rex3)
-	RacahAlgebra.evaluate(rex4)
-end
-
-# ╔═╡ 6b391ff1-7605-4679-9673-5229c07562a4
-begin
-	ew6j = W6j(a, f, X, ee, b, s);   fw9j = W9j(a, f, X, d, q, ee, p, c, b)
-	rex5 = RacahExpression( [X], Integral[], Basic(0), Basic(2*X+1), Kronecker[], Triangle[], W3j[], W6j[ew6j], W9j[fw9j], Ylm[], Djpq[] )
-	@show rex
-	rex6 = RacahAlgebra.equivalentForm(rex5)
-	RacahAlgebra.evaluate(rex6)
-end
-
-# ╔═╡ 76823179-81b9-4c02-afbe-f415be01996d
-md"""
-Apart from these quite simple expressions, much more complex ones rapidly arise if angular momenta are coupled together or re-coupled in order to allow the simplification of many-particle matrix elements.
-
-In the next example, we shall consider the (so-called) re-coupling coefficients $ < (j_1, j_2) J_{12}, j_3: JM| j_1, (j_2,j_3) J_{23}: JM >$ which is known to be independent of $M$. The expression of this re-coupling coefficient can be written down quite easily by applying twice a Clesch-Gordan expansion on both sides of the 'overlap matrix element'. Simple manipulations gives immediately rise to the `RacahExpression`:
-"""
-
-# ╔═╡ 998e3082-bb78-4add-a564-8cde78e136e9
-begin
-	j1   = Basic(:j1);    j2 = Basic(:j2);    j3 = Basic(:j3);    J12 = Basic(:J12);    J23 = Basic(:J23);    J = Basic(:J)
-	m1   = Basic(:m1);    m2 = Basic(:m2);    m3 = Basic(:m3);    M12 = Basic(:M12);    M23 = Basic(:M23);    M = Basic(:M)
-	w3ja = W3j(J12, j3, J, M12, m3, -M);        w3jb = W3j(j1, j2, J12, m1, m2, -M12)       
-	w3jc = W3j(j2, j3, J23, m2, m3, -M23);      w3jd = W3j(j1, J23, J, m1, M23, -M)   
-end
-
-# ╔═╡ 85b4f8e2-38c4-43e2-b97e-a9c8e2050479
-begin
-	rex7 = RacahExpression( [m1, m2, m3, M12, M23], Integral[], -J12 + 2*j3 - 2*M - 2*j1 - M12 - M23 + J23, 
-          	  (2*J+1) * sqrt( (2*J12+1)*(2*J23+1) ), Kronecker[], Triangle[], [w3ja, w3jb, w3jc, w3jd], W6j[], W9j[], Ylm[], Djpq[] )
-
-end
-
-# ╔═╡ 7eab1e4b-ab7d-4012-9b5d-9f96d2d989ea
-md"""
-which includes a five-fold summation (three further summations, for instance, for $m_1', m_2', m_3'$, and can be simplified because of the assumed normalization of the $|j_p m_p > $ states of all subsystems). Here, the simplification of this RacahExpression is already harder to see but can be obtained by calling:
-"""
-
-# ╔═╡ 5bfe0fea-a3a9-4ca8-8e8e-33b3f6048e27
-RacahAlgebra.evaluate(rex7)
-
-# ╔═╡ f9f9639f-68e0-4ee5-8cb4-9328ac4d76b3
-md"""
-The given recoupling coefficient is obviously independent of $M$ and just given by a Wigner 6j symbol times some rather trivial (delta) factors. A closer inspection of the Wigner symbol also enables one to express the phase in a slightly more convinient form.
-"""
+PeriodicTable.getAtomicNumber(:U)
 
 # ╔═╡ 759da271-0adf-4ae7-9642-8620c4c34690
+md"""
+Similarly, basis information about the elements can be obtained from the function `PeriodicTable.getData`
+"""
 
+# ╔═╡ d5e827cf-ca43-4b6a-ad79-a1128e8dd187
+begin
+	@show PeriodicTable.getData("mass", :U), PeriodicTable.getData("mass", 92)
+	@show PeriodicTable.getData("1st IP", :He), PeriodicTable.getData("1st IP", :Ne)
+	@show PeriodicTable.getData("polarizibility", :He), PeriodicTable.getData("polarizibility", :Ne)
+	@show PeriodicTable.getData("ground configuration", :He), PeriodicTable.getData("ground configuration", :Ne)
+end
+
+# ╔═╡ 469176ba-343e-462e-bf0c-892471c7e8e6
+md"""
+These data might be useful especially if some tabulations or legend of some plots need to be prepare. Apart from those data, which can be read of directly from various representations of the periodic table, we shall provide also some isotope-selected data, although no attempt will be made to compete here with any useful tabulations from the literature. For many cases, and as seen below, this function is simply not yet implemented properly, cf. `PeriodicTable.getIsotopeData` and `Semiempirical.estimate`.  
+"""
+
+# ╔═╡ c89e90c3-0d42-4e36-b8bc-75e5adb2d7e7
+
+
+# ╔═╡ 69d47003-77b1-4e29-a29b-044d4067cc2f
+md"""
+## 1. Basic Data Access
+### Access by symbol and atomic number
+"""
+
+# ╔═╡ 708cc914-dedd-462e-b2af-73543573ff54
+begin
+	# Get mass for Uranium by symbol and atomic number - USING THE WORKING API
+	mass_U_symbol = JenaAtomicCalculator.PeriodicTable.getData("mass", :U)
+	mass_U_number = JenaAtomicCalculator.PeriodicTable.getData("mass", 92)
+	
+	md"""
+	**Uranium mass:**
+	- By symbol (:U): $(mass_U_symbol)
+	- By atomic number (92): $(mass_U_number)
+	"""
+end
+
+# ╔═╡ e5b163bc-3eec-4533-95a9-dc1c3fcf1561
+md"""
+### First ionization potentials
+"""
+
+# ╔═╡ 53979a3f-419d-4e39-9cec-ec43f3bfade1
+begin
+	ip_He = JenaAtomicCalculator.PeriodicTable.getData("1st IP", :He)
+	ip_Ne = JenaAtomicCalculator.PeriodicTable.getData("1st IP", :Ne)
+	
+	md"""
+	**First ionization potentials:**
+	- Helium (He): $(ip_He) eV
+	- Neon (Ne): $(ip_Ne) eV
+	"""
+end
+
+# ╔═╡ 7c66d150-9670-4a09-a926-d5c80f78e4d3
+md"""
+### Polarizabilities
+"""
+
+# ╔═╡ cb151d51-610d-4c50-9661-75756d62987d
+begin
+	polar_He = JenaAtomicCalculator.PeriodicTable.getData("polarizibility", :He)
+	polar_Ne = JenaAtomicCalculator.PeriodicTable.getData("polarizibility", :Ne)
+	
+	md"""
+	**Polarizabilities:**
+	- Helium (He): $(polar_He)
+	- Neon (Ne): $(polar_Ne)
+	"""
+end
+
+# ╔═╡ f1a4e563-f53c-4967-ac07-2fe785450611
+md"""
+### Ground configurations
+"""
+
+# ╔═╡ a1ac50e1-c409-4baf-ba5d-e13f99b91c26
+begin
+	config_He = JenaAtomicCalculator.PeriodicTable.getData("ground configuration", :He)
+	config_Ne = JenaAtomicCalculator.PeriodicTable.getData("ground configuration", :Ne)
+	
+	md"""
+	**Ground configurations:**
+	- Helium (He): $(config_He)
+	- Neon (Ne): $(config_Ne)
+	"""
+end
+
+# ╔═╡ ad88be15-41d4-4623-9b4e-b5658976d0f3
+md"""
+## 2. Working with Symbols and Atomic Numbers
+"""
+
+# ╔═╡ fb475c4e-30cf-4574-8d62-a04a867827cb
+begin
+	# Julia symbols for elements
+	element_symbols = [:He, :Ne, :Ar]
+	
+	# Get atomic numbers
+	atomic_numbers = [JenaAtomicCalculator.PeriodicTable.getAtomicNumber(sym) for sym in element_symbols]
+	
+	md"""
+	**Working with Symbol syntax:**
+	- Julia symbols: $(element_symbols)
+	- Atomic numbers: $(atomic_numbers)
+	- Uranium atomic number (Z=92): $(JenaAtomicCalculator.PeriodicTable.getAtomicNumber(:U))
+	"""
+end
+
+# ╔═╡ 98483bd8-a8a2-4dda-8d92-e1f1810036cc
+md"""
+## 3. Accessing Multiple Properties for Different Elements
+"""
+
+# ╔═╡ fe603003-b733-417b-b2b1-c4e15ca85d96
+begin
+	# Carbon properties
+	mass_C = JenaAtomicCalculator.PeriodicTable.getData("mass", :C)
+	ip_C = JenaAtomicCalculator.PeriodicTable.getData("1st IP", :C)
+	config_C = JenaAtomicCalculator.PeriodicTable.getData("ground configuration", :C)
+	
+	md"""
+	**Carbon (C) properties:**
+	- Atomic mass: $(mass_C) u
+	- First ionization potential: $(ip_C) eV
+	- Ground configuration: $(config_C)
+	"""
+end
+
+# ╔═╡ 83445781-cec0-45d3-bb0b-efcf297d3b49
+begin
+	# Sodium properties
+	mass_Na = JenaAtomicCalculator.PeriodicTable.getData("mass", :Na)
+	ip_Na = JenaAtomicCalculator.PeriodicTable.getData("1st IP", :Na)
+	config_Na = JenaAtomicCalculator.PeriodicTable.getData("ground configuration", :Na)
+	
+	md"""
+	**Sodium (Na) properties:**
+	- Atomic mass: $(mass_Na) u
+	- First ionization potential: $(ip_Na) eV
+	- Ground configuration: $(config_Na)
+	"""
+end
+
+# ╔═╡ 31cea1e7-361b-47da-ba2f-2835ae1e2a7d
+md"""
+## 4. Working with Multiple Elements
+"""
+
+# ╔═╡ 0365fa51-c199-4c1b-a264-bd9cb64d56b7
+begin
+	# Noble gases
+	noble_gases = [:He, :Ne, :Ar, :Kr, :Xe, :Rn]
+	
+	# Get masses and ionization potentials
+	masses_ng = [JenaAtomicCalculator.PeriodicTable.getData("mass", gas) for gas in noble_gases]
+	ips_ng = [JenaAtomicCalculator.PeriodicTable.getData("1st IP", gas) for gas in noble_gases]
+	configs_ng = [JenaAtomicCalculator.PeriodicTable.getData("ground configuration", gas) for gas in noble_gases]
+	
+	# Display as table
+	println("Noble Gases Properties:")
+	println("Element | Mass (u) | 1st IP (eV) | Configuration")
+	println("--------|----------|-------------|----------------")
+	for i in 1:length(noble_gases)
+		println("$(rpad(noble_gases[i], 6)) | $(rpad(round(masses_ng[i], digits=4), 8)) | $(rpad(round(ips_ng[i], digits=3), 10)) | $(configs_ng[i])")
+	end
+end
+
+# ╔═╡ 056c1b8c-16b9-43bd-8215-bd42a65c2d4d
+md"""
+## 5. First 10 Elements Overview
+"""
+
+# ╔═╡ ed541f54-6b25-4293-ab5b-765c7beb358c
+begin
+	# First 10 elements
+	first_10_symbols = [:H, :He, :Li, :Be, :B, :C, :N, :O, :F, :Ne]
+	
+	# Get properties
+	masses_10 = [JenaAtomicCalculator.PeriodicTable.getData("mass", sym) for sym in first_10_symbols]
+	ips_10 = [JenaAtomicCalculator.PeriodicTable.getData("1st IP", sym) for sym in first_10_symbols]
+	configs_10 = [JenaAtomicCalculator.PeriodicTable.getData("ground configuration", sym) for sym in first_10_symbols]
+	Z_10 = [JenaAtomicCalculator.PeriodicTable.getAtomicNumber(sym) for sym in first_10_symbols]
+	
+	# Display as table
+	println("First 10 Elements:")
+	println("Z  | Symbol | Mass (u)    | 1st IP (eV) | Configuration")
+	println("---|--------|------------|-------------|----------------")
+	for i in 1:length(first_10_symbols)
+		println("$(lpad(Z_10[i], 2)) | $(rpad(first_10_symbols[i], 6)) | $(rpad(round(masses_10[i], digits=4), 10)) | $(rpad(round(ips_10[i], digits=3), 10)) | $(configs_10[i])")
+	end
+end
+
+# ╔═╡ 051962f8-4853-413b-8b27-ea03a338ca7b
+md"""
+## 6. Semiempirical Estimates
+"""
+
+# ╔═╡ d684d182-6fcb-40db-8421-e0707aeb76d7
+begin
+	# Test semiempirical estimates
+	try
+		energy_estimate_1 = JenaAtomicCalculator.Semiempirical.estimate("binding energy", 10.0, JenaAtomicCalculator.Configuration("[He]"))
+		energy_estimate_2 = JenaAtomicCalculator.Semiempirical.estimate("binding energy", 20.0, JenaAtomicCalculator.Configuration("[Ar]"))
+		
+		md"""
+		**Semiempirical Binding Energy Estimates:**
+		- Z=10, [He] configuration: $(round(energy_estimate_1, digits=6)) Hartree
+		- Z=20, [Ar] configuration: $(round(energy_estimate_2, digits=6)) Hartree
+		"""
+	catch e
+		md"""
+		**Semiempirical estimates:**
+		- Note: This function might not be fully implemented in all versions
+		- Error (if any): $(e)
+		"""
+	end
+end
+
+# ╔═╡ 2db007e6-7ef3-4430-b12b-d4f26891b8a4
+md"""
+## 7. Interactive Element Explorer
+"""
+
+# ╔═╡ 9d932e5c-00a9-4924-b90a-0d6f26341cba
+# Change this to explore different elements (use Julia Symbol syntax)
+element_to_explore = :Fe
+
+# ╔═╡ 98ed57e2-e43d-4742-b56f-d8a08d343bf0
+begin
+	try
+		Z_el = JenaAtomicCalculator.PeriodicTable.getAtomicNumber(element_to_explore)
+		mass_el = JenaAtomicCalculator.PeriodicTable.getData("mass", element_to_explore)
+		ip_el = JenaAtomicCalculator.PeriodicTable.getData("1st IP", element_to_explore)
+		config_el = JenaAtomicCalculator.PeriodicTable.getData("ground configuration", element_to_explore)
+		
+		md"""
+		**Properties for $(element_to_explore):**
+		- Atomic number Z: $(Z_el)
+		- Atomic mass: $(mass_el) u
+		- First ionization potential: $(ip_el) eV
+		- Ground configuration: $(config_el)
+		"""
+	catch e
+		md"""
+		**Error:** Could not find data for element $(element_to_explore)
+		Please try a valid element symbol like :H, :He, :Li, :Fe, :U, etc.
+		"""
+	end
+end
+
+# ╔═╡ f7da0574-0d7a-41d5-bf7c-2be57bba47ec
+md"""
+## 8. Available Data Properties
+"""
+
+# ╔═╡ 1ef9fd24-b9f0-4f02-aea4-c1699bda8993
+
+
+# ╔═╡ 225b8db2-3949-4cf1-95a9-a183f023f523
+
+
+# ╔═╡ d70082f6-fa88-4b54-8306-46efe25138fc
+md"""
+# Still under construction !!!
+"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 JenaAtomicCalculator = "830ae420-d14d-11e8-2f94-6b071437414d"
-SymEngine = "123dc426-2d89-5057-bbad-38513e3affd8"
+Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [compat]
 JenaAtomicCalculator = "~0.1.0"
-SymEngine = "~0.12.0"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -156,7 +325,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.9"
 manifest_format = "2.0"
-project_hash = "50ee68bcc49840e277b1262e65524be0e279dead"
+project_hash = "a6c751bef3f623989ff48c500b8f3de2956958ac"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -1704,22 +1873,37 @@ version = "1.9.2+0"
 # ╠═fd4ef417-311f-43aa-a601-bf8a9d66b890
 # ╟─956d7bd6-d59f-4daa-88b6-9b8879918d79
 # ╠═b0f8586c-db7e-4872-b4e3-ff6beafb4c6c
-# ╟─4c2b4d2a-4b34-4f6a-9690-6efc9f2d3fea
-# ╠═e9325c21-5136-49bd-b9e4-77924560b4e2
-# ╠═571405c1-0f1f-4cb5-88dd-31e4f9afc74d
-# ╟─b0619394-8dc7-43d0-b419-387eaaf9fe6b
-# ╠═d557472b-3056-4b6b-830c-dcfcbba34a27
-# ╟─5b12989c-8069-4f42-96af-963881db0df2
-# ╠═b47294f2-626b-48c2-80fb-e326ea88d692
-# ╟─b6575a7f-43a2-4bc6-ae0c-efa6e182eb20
-# ╠═4e7dbd4d-28c7-47c2-befb-d756e1c413ed
-# ╠═6b391ff1-7605-4679-9673-5229c07562a4
-# ╟─76823179-81b9-4c02-afbe-f415be01996d
-# ╠═998e3082-bb78-4add-a564-8cde78e136e9
-# ╠═85b4f8e2-38c4-43e2-b97e-a9c8e2050479
-# ╟─7eab1e4b-ab7d-4012-9b5d-9f96d2d989ea
-# ╠═5bfe0fea-a3a9-4ca8-8e8e-33b3f6048e27
-# ╟─f9f9639f-68e0-4ee5-8cb4-9328ac4d76b3
-# ╠═759da271-0adf-4ae7-9642-8620c4c34690
+# ╠═4c2b4d2a-4b34-4f6a-9690-6efc9f2d3fea
+# ╟─759da271-0adf-4ae7-9642-8620c4c34690
+# ╠═d5e827cf-ca43-4b6a-ad79-a1128e8dd187
+# ╟─469176ba-343e-462e-bf0c-892471c7e8e6
+# ╠═c89e90c3-0d42-4e36-b8bc-75e5adb2d7e7
+# ╠═a460393c-4c10-473d-9c27-0e5d032e2f58
+# ╠═69d47003-77b1-4e29-a29b-044d4067cc2f
+# ╠═708cc914-dedd-462e-b2af-73543573ff54
+# ╠═e5b163bc-3eec-4533-95a9-dc1c3fcf1561
+# ╠═53979a3f-419d-4e39-9cec-ec43f3bfade1
+# ╠═7c66d150-9670-4a09-a926-d5c80f78e4d3
+# ╠═cb151d51-610d-4c50-9661-75756d62987d
+# ╠═f1a4e563-f53c-4967-ac07-2fe785450611
+# ╠═a1ac50e1-c409-4baf-ba5d-e13f99b91c26
+# ╠═ad88be15-41d4-4623-9b4e-b5658976d0f3
+# ╠═fb475c4e-30cf-4574-8d62-a04a867827cb
+# ╠═98483bd8-a8a2-4dda-8d92-e1f1810036cc
+# ╠═fe603003-b733-417b-b2b1-c4e15ca85d96
+# ╠═83445781-cec0-45d3-bb0b-efcf297d3b49
+# ╠═31cea1e7-361b-47da-ba2f-2835ae1e2a7d
+# ╠═0365fa51-c199-4c1b-a264-bd9cb64d56b7
+# ╠═056c1b8c-16b9-43bd-8215-bd42a65c2d4d
+# ╠═ed541f54-6b25-4293-ab5b-765c7beb358c
+# ╠═051962f8-4853-413b-8b27-ea03a338ca7b
+# ╠═d684d182-6fcb-40db-8421-e0707aeb76d7
+# ╠═2db007e6-7ef3-4430-b12b-d4f26891b8a4
+# ╠═9d932e5c-00a9-4924-b90a-0d6f26341cba
+# ╠═98ed57e2-e43d-4742-b56f-d8a08d343bf0
+# ╠═f7da0574-0d7a-41d5-bf7c-2be57bba47ec
+# ╠═1ef9fd24-b9f0-4f02-aea4-c1699bda8993
+# ╟─225b8db2-3949-4cf1-95a9-a183f023f523
+# ╟─d70082f6-fa88-4b54-8306-46efe25138fc
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

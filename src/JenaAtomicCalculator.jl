@@ -61,14 +61,14 @@ export AbstractCImethod, AbstractConfigurationRestriction, AbstractEeInteraction
        DiagonalCoulomb, DefaultQuantizationAxis, displayCouplings, displayConfiguration,  displayConfigurations,
        Eimex, ElectronCapture, ElecCapture, estimate, ElectricDipoleMoment, Einstein, EinsteinX, EmMultipole, evaluate, ExpStokes, 
        Empirical, ExciteElectrons, ExcitationLevel, ExpandShells, estimateCrossSections, extractConfiguration,  extractConfigurations,  
-       extractFromConfiguration, extractFromConfigurations,
+       extractFromConfiguration, extractFromConfigurations, EmProperty, EmPropertyC,
        E1, M1, E2, M2, E3, M3, E4, M4,
-       FormFactor, FormF, FullCIeigen,
+       FormFactor, FormF, FullCIeigen, ForPedestrians, ForGivenConfigs,
        ForAutoIonization, ForDielectronicCapture, ForDielectronicRecombination, ForElectronCapture, ForHollowIons, ForImpactIonization, 
        ForPhotoEmission, ForPhotoIonization, ForPhotoRecombination, ForRasExcitations, ForStepwiseDecay, FineStructure, FineStructureLS, FromBasis, 
        generate, GreenSettings, GreenChannel, GreenExpansion, getDefaults, Green, Gui, GroundConfiguration, GeneralizedConfigurations,
        GetParity, generateConfiguration, generateConfigurations,
-       Hamiltonian, Hfs, HyperfineInduced, HighHarmonic, HFS, HydrogenicIon, HarmonicQuantizationAxis, HundsRules,
+       Hamiltonian, Hfs, HyperfineInduced, HighHarmonic, HFS, HydrogenicIon, HarmonicQuantizationAxis, HundsRules, HyperfineStructure,
        interpolate, integrate, Integral, ImpactExcAuto, ImpactExcitation, ImpactExcitationAutoion, ImpactIonization, 
        InteractionStrength, InternalConv, InternalConversion, InternalRecombination, Isotope, IsotopeShift, IsotopicFraction, IsOccupied,
        Kronecker, 
@@ -170,12 +170,12 @@ include("module-HyperfineInduced.jl")
 include("module-ResonantInelastic.jl") 
 include("module-DecayYield.jl")
 include("module-ImpactExcitation.jl")
+include("module-CoulombExcitation.jl")
 end
 
 if incAdvancedProcesses
 # Functions/methods for more advanced atomic processes
 include("module-MultiPhotonDeExcitation.jl")
-include("module-CoulombExcitation.jl")
 include("module-CoulombIonization.jl")
 include("module-PhotoDoubleIonization.jl")
 include("module-PhotoIonizationFluores.jl")

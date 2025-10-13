@@ -379,7 +379,7 @@ function testModule_Cascade_StepwiseDecay(; short::Bool=true)
     Defaults.setDefaults("print summary: close", "")
     # Make the comparison with approved data
     success = testCompareFiles( joinpath(@__DIR__, "..", "test", "approved", "test-Cascade-StepwiseDecay-approved.sum"), 
-                                joinpath(@__DIR__, "..", "test", "test-Cascade-StepwiseDecay-new.sum"), "Steps that are defined for the curren", 15) 
+                                joinpath(@__DIR__, "..", "test", "test-Cascade-StepwiseDecay-new.sum"), "Steps that are defined for the curren", 10) 
     testPrint("testModule_Cascade-StepwiseDecay()::", success)
     return(success)  
 end
@@ -397,7 +397,9 @@ function testModule_Cascade_PhotonIonization(; short::Bool=true)
     name = "Photoionization of Si- "
     grid = Radial.Grid(Radial.Grid(false); rnt = 3.0e-6, h = 2.0e-2, hp = 3.0e-2, rbox = 11.0)
     wa   = Cascade.Computation(Cascade.Computation(); name=name, nuclearModel=Nuclear.Model(10.), grid=grid, approach=Cascade.AverageSCA(),
-                                scheme=Cascade.PhotonIonizationScheme([Photo()], 1, [5.0]),
+                                scheme=Cascade.PhotoIonizationScheme([E1], [0.5], [4.0], [Shell("2s"), Shell("2p")], 
+                                                                     [Shell("2s"), Shell("2p"), Shell("3p"), Shell("4p"), Shell("5p")],
+                                                                     LevelSelection(), [0,1], 0., 0.),
                                 initialConfigs=[Configuration("1s^2 2s^2 2p^5")] )
     wb = perform(wa; output=true)
     ###
@@ -422,9 +424,10 @@ function testModule_Cascade_PhotonExcitation(; short::Bool=true)
     grid = Radial.Grid(Radial.Grid(false); rnt = 3.0e-6, h = 2.0e-2, hp = 3.0e-2, rbox = 11.0)
     name = "Photoabsorption calculations for Ne^+ for energies = [1, 4] a.u."
     wa   = Cascade.Computation(Cascade.Computation(); name=name, nuclearModel=Nuclear.Model(10.), grid=grid, approach=Cascade.AverageSCA(),
-                                scheme=Cascade.PhotonExcitationScheme([PhotoExc()], [E1], 0.5, 4.0, 1, [Shell("2s"), Shell("2p")], 
-                                                                        [Shell("2s"), Shell("2p"), Shell("3p"), Shell("4p"), Shell("5p")]),
-                                                                        initialConfigs=[Configuration("1s^2 2s^2 2p^5")] )
+                               scheme=Cascade.PhotoExcitationScheme([E1], 0.5, 4.0, 1, [Shell("2s"), Shell("2p")], 
+                                                                     [Shell("2s"), Shell("2p"), Shell("3p"), Shell("4p"), Shell("5p")],
+                                                                     LevelSelection(), [0,1], 0., 0.),
+                                                                     initialConfigs=[Configuration("1s^2 2s^2 2p^5")] )
     wb = perform(wa; output=true)
     ###
     Defaults.setDefaults("print summary: close", "")

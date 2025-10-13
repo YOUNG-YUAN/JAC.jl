@@ -375,6 +375,25 @@ end
 
 
 """
+`AngularMomentum.j_values(j1::AngularJ64, j2::AngularJ64)`  
+    ... returns a list of j-values that all fulfill the triangular condition delta(j1, j2, j) == 1;
+        jList::Array{AngularJ64,1} is returned.
+"""
+function  j_values(j1::AngularJ64, j2::AngularJ64) 
+    jList = AngularJ64[]
+    
+    if       j1.den == 1   &&   j2.den == 1    for  jx = abs(j1.num - j2.num):j1.num + j2.num         push!( jList, AngularJ64(jx))       end
+    elseif   j1.den == 1   &&   j2.den == 2    for  jx = abs(2*j1.num - j2.num):2:2*j1.num + j2.num   push!( jList, AngularJ64(jx//2))    end
+    elseif   j1.den == 2   &&   j2.den == 1    for  jx = abs(j1.num - 2*j2.num):2:j1.num + 2*j2.num   push!( jList, AngularJ64(jx//2))    end
+    elseif   j1.den == 2   &&   j2.den == 2    for  jx = abs(j1.num - j2.num):2:j1.num + j2.num       push!( jList, AngularJ64(jx//2))    end
+    else     error("stop a")
+    end
+
+    return( jList )
+end
+
+
+"""
 `AngularMomentum.m_values(j::AngularJ64)`  ... returns a list of m-values for given j::AngularJ64.
 """
 function  m_values(j::AngularJ64) 
@@ -394,6 +413,15 @@ end
 function  oneJ(ja::AngularJ64)  
     if  ja.den  == 1    ja1 = 1.0 * ja.num   else   ja1 = ja.num / 2.   end
     return( ja1 )
+end
+
+
+"""
+`AngularMomentum.oneM(ma::AngularM64)`  ... calculates ma; a value::Float64 is returned.
+"""
+function  oneM(ma::AngularM64)  
+    if  ma.den  == 1    ma1 = 1.0 * ma.num   else   ma1 = ma.num / 2.   end
+    return( ma1 )
 end
 
 

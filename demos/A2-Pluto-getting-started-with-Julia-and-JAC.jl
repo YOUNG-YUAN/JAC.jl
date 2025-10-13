@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.5
+# v0.20.17
 
 using Markdown
 using InteractiveUtils
@@ -47,13 +47,13 @@ md"""
 
 !!! info "With Julia package manger mode"
 	- press **]** to enter Julia package manager mode in the Julia terminal (REPL mode)
-	- type **add JAC**
+	- type **add JenaAtomicCalculator**
 
 !!! info "With 'Pkg.jl' ine Julia REPL"
 	using Pkg\
-	Pkg.add("JAC")
+	Pkg.add("JenaAtomicCalculator")
 !!! warning "Not required in Pluto.jl"
-	- Installation of JAC is **not explicitly required** in Pluto notebooks which can be simply called with **using JAC**
+	- Installation of JAC is **not explicitly required** in Pluto notebooks which can be simply called with **using JenaAtomicCalculator**
 	- Pluto package manager automatically installs any package that is called/required inside of the notebook by the **using** or **import** keywords; for example, JAC can be called (and also will be installed for the first time) just by **using JAC**
 	- More details on Pluto.jl package manager at <https://plutojl.org/en/docs/packages/>
 """
@@ -79,6 +79,6 @@ project_hash = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 # ╟─9cd6811e-0c7e-4527-8c3f-17dd1da68638
 # ╟─3c91b372-9ed4-453a-8d19-31ba5e25bbad
 # ╟─791c73a4-ec96-421c-8233-7b7376ceac9a
-# ╠═686bebce-9dba-43ab-b02d-f56a9d931a3d
+# ╟─686bebce-9dba-43ab-b02d-f56a9d931a3d
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

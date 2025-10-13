@@ -326,46 +326,6 @@ function Basics.determineNonorthogonalShellOverlap(finalSubshells::Array{Subshel
 end
 
 
-
-#==  August 2025, replaced by Basics.GetParity() ...
-"""
-`Basics.determineParity(conf::Configuration)`  ... to determine the parity of a given non-relativistic configuration.
-"""
-function Basics.determineParity(conf::Configuration)
-
-    par = 1
-    for  (k,v) in conf.shells
-    if   iseven(k.l)    p = 1   else   p = -1    end    
-    par = par * (p^v)
-    end
-
-    if       par == 1    return( Basics.plus )  
-    elseif   par == -1   return( Basics.minus )
-    else     error("stop b")
-    end  
-end
-
-
-
-"""
-`Basics.determineParity(conf::ConfigurationR)`  ... to determine the parity of a given relativistic configuration.
-"""
-function Basics.determineParity(conf::ConfigurationR)
-
-    par = 1
-    for  (k,v) in conf.subshells
-    l = Basics.subshell_l(k)
-    if   iseven(l)    p = 1   else   p = -1    end    
-    par = par * (p^v)
-    end
-
-    if       par == 1    return( Basics.plus )  
-    elseif   par == -1   return( Basics.minus )
-    else     error("stop b")
-    end  
-end ==#
-
-
 """
 `Basics.determinePolarizationVector(q::Int64, kind::Basics.AbstractPolarization; star::Bool)`  
     ... determines the q-th component of the (complex and unit) polarization vector u for the given kind of polarization;
@@ -604,28 +564,6 @@ function Basics.display(sa::String)
 end
 
 
-#== August 2025, Basics.displayConfigurations
-"""
-`Basics.display(stream::IO, configs::Array{Configuration,1})`  
-    ... displays the generated list of configurations in a compact form; nothing is returned in this case.
-"""
-function  Basics.display(stream::IO, configs::Array{Configuration,1})
-    nx = 85
-    println(" ")
-    println("  Generated list of (non-relativistic) configurations that contribute to the representation:")
-    ## println(" ")
-    println("  ", TableStrings.hLine(nx))
-    for  i = 1:length(configs)
-        sa = string("(", i, ")" );    sa = TableStrings.flushright(9, sa, na=3);   sa = sa * string(configs[i])
-        println(sa)
-    end 
-    println("  ", TableStrings.hLine(nx))
-    
-    return( nothing )
-end  ==#
-
-
-
 """
 `Basics.display(stream::IO, orbitals::Dict{Subshell, Orbital}, grid::Radial.Grid; longTable::Bool=false)`  
     ... displays the (generated)  orbitals in a neat and compact form; the default (longTable==false) just prints the subshell,
@@ -822,40 +760,6 @@ function Basics.displayMeanEnergies(stream::IO, multiplets::Array{Multiplet,1}; 
     return( nothing )
 end
 
-#== August 2025, Basics.displayConfigurations
-"""
-`Basics.displayOpenShells(stream::IO, confList::Array{Configuration,1})`  
-    ... displays on stream the open configurations, separated by comma, as single string. Nothing is returned otherwise.
-"""
-function Basics.displayOpenShells(stream::IO, confList::Array{Configuration,1})
-    shells     = Basics.extractShellList(confList);   isFull = true
-    openShells = Shell[]
-    for  shell in shells
-        isFull = true;    maxOcc = 2 * (2*shell.l + 1)
-        for conf  in  confList                
-            if    haskey(conf.shells, shell)  &&  conf.shells[shell] == maxOcc
-            else  isFull = false
-            end 
-        end 
-        if  !isFull   push!(openShells, shell)   end
-    end 
-    # Collect the open-shell occupation in a string
-    sa = "Open-shell configurations:  "
-    for  conf  in  confList
-        for  shell in openShells
-            if      haskey(conf.shells, shell)  &&  conf.shells[shell] == 0
-            elseif  haskey(conf.shells, shell)  &&  conf.shells[shell] == 1    sa = sa * string(shell) * " "
-            elseif  haskey(conf.shells, shell)  occ = conf.shells[shell];      sa = sa * string(shell) * "^$occ "
-            end 
-        end 
-        sa = sa[1:end-1] * ",  "
-    end 
-    sa = sa[1:end-3]
-    println(stream, sa)
-    
-    return(nothing)
-end ==#
-
 
 """
 `Basics.displayOrbitalOverlap(stream::IO, leftOrbitals::Dict{Subshell, Orbital}, rightOrbitals::Dict{Subshell, Orbital}, 
@@ -947,63 +851,6 @@ function Basics.displayOrbitalProperties(stream::IO, orbitals::Dict{Subshell, Or
     return ( nothing )
 end
 
-
-#=====
-"""
-`Basics.excludeDoubles(confList::Array{Configuration,1})`  
-    ... to exlude from the (non-relativistic) confList all 'doubles', ie. configurations that occured before in the list; 
-        a new confList::Array{Configuration,1} is returned.
-"""
-function Basics.excludeDoubles(confList::Array{Configuration,1})
-    confListNew = [ deepcopy(confList[1]) ]
-
-    for  ic  in 2:length(confList)
-        add = true
-        for  id in 1:ic-1    if   confList[ic] == confList[id]    add = false;   break   end    end
-        if  add   push!( confListNew, confList[ic])   end
-    end    
-    
-    return( confListNew )
-end
-    
-    
-"""
-`Basics.excludeDoubles(csfList::Array{CsfR,1})`  
-    ... to exlude from the (relativistic) csfList all 'doubles', ie. CSF that occured already before in the list; 
-        a new csfList::Array{CsfR,1} is returned.
-"""
-function Basics.excludeDoubles(confList::Array{CsfR,1})
-    error("Not yet implemented !")
-    
-    csfListNew = [ deepcopy(csfList[1]) ]
-    
-    for  ic  in 2:length(csfList)
-        add = true
-        for  id in 1:ic-1
-            if   csfList[ic] == csfList[id]    add = false;   break   end
-        end
-        if  add   push!( csfListNew, csfList[ic])	end
-    end    
-    return( csfListNew )
-end
-=====#
-
-    
-#== August 2025, LeadingConfiguration()
-"""
-`Basics.excludeConfigurations(confList::Array{Configuration,1},NoElectrons::Int64)`  
-    ... excludes all configurations from confList with less than NoElectrons; 
-        a newConfList::Array{Configuration,1} is returned. 
-"""
-function Basics.excludeConfigurations(confList::Array{Configuration,1},NoElectrons::Int64)
-    newConfList = Configuration[]
-    for  conf in confList       
-        if  conf.NoElectrons >= NoElectrons     push!(newConfList, conf)    end
-    end
-    
-    return( newConfList )
-end ==#
-
     
 """
 `Basics.expandOrbital(orbital::Orbital, boundOrbitals::Dict{Subshell, Orbital}, threshold::Float64, grid::Radial.Grid; 
@@ -1036,52 +883,6 @@ function Basics.expandOrbital(orbital::Orbital, boundOrbitals::Dict{Subshell, Or
     return( expansion )
 end
 
-
-#== August 2025, LeadingConfiguration()
-"""
-`Basics.extractLeadingConfiguration(level::ManyElectron.Level)`  
-    ... extract the leading configuration of the given level; a conf::Configuration is returned.
-"""
-function Basics.extractLeadingConfiguration(level::ManyElectron.Level)
-    allConfs = Basics.extractNonrelativisticConfigurations(level.basis)
-    weights  = zeros(length(allConfs))
-    for  (ia, allConf) in  enumerate(allConfs)
-        for (ic, csf) in enumerate(level.basis.csfs)
-            if  allConf == Basics.extractNonrelativisticConfigurationFromCsfR(csf, level.basis)     
-                weights[ia] = weights[ia] + level.mc[ic]^2
-            end
-        end
-    end
-    # Determine index of maximum and return the corresponding configuration
-    wx   = findmax(weights)
-    conf = allConfs[ wx[2] ]
-    
-    return( conf )
-end  ==#
-
-    
-#== August 2025, LeadingConfigurationR()
-"""
-`Basics.extractLeadingConfigurationR(level::ManyElectron.Level)`  
-    ... extract the leading relativistic configuration of the given level; a conf::ConfigurationR is returned.
-"""
-function Basics.extractLeadingConfigurationR(level::ManyElectron.Level)
-    allConfs = Basics.extractRelativisticConfigurations(level.basis)
-    weights  = zeros(length(allConfs))
-    for  (ia, allConf) in  enumerate(allConfs)
-        for (ic, csf) in enumerate(level.basis.csfs)
-            if  allConf == Basics.extractRelativisticConfigurationFromCsfR(csf, level.basis)     
-                weights[ia] = weights[ia] + level.mc[ic]^2
-            end
-        end
-    end
-    # Determine index of maximum and return the corresponding configuration
-    wx   = findmax(weights)
-    conf = allConfs[ wx[2] ]
-    
-    return( conf )
-end ==#
-
     
 """
 `Basics.extractMeanEnergy(pqn::Int64, basis::Basis)`  
@@ -1110,51 +911,6 @@ function Basics.extractMeanOccupation(basis::Basis)
     end
     return( meanOccs )
 end
-
-    
-#== August 2025, Multiplicity
-"""
-`Basics.extractMultiplicity(conf::Configuration)`  
-    ... extracts the multiplicity, i.e. the g-factor, of the configuration conf if all the levels are considered to be degenerate;
-        this multiplicity is used for empirical computations that are based on configuration-averaged plasma levels.
-        A g::Int64 is returned
-"""
-function Basics.extractMultiplicity(conf::Configuration)
-    g = 0
-    ##x rConfs       = Basics.generateConfigurationRs(conf)
-    rConfs       = Basics.generateConfigurations(Basics.RelativisticConfigurations(), conf)
-    shellList    = Basics.generateShellList(1, 10, "f")
-    subshellList = Basics.generateSubshellList(shellList)
-    
-    for  rConf  in  rConfs
-        g = g + length(Basics.generateCsfRs(rConf, subshellList))
-    end
-    
-    return( g )
-end  ==#
-
-    
-#== August 2025, OpenShellNumber()
-"""
-`Basics.extractNoOpenShells(conf::Configuration)`  
-    ... determine the number of open (nonrelativistic) shells in conf; a singleton of type AbstractOpenShell is returned.
-"""
-function Basics.extractNoOpenShells(conf::Configuration)
-    ns = 0
-    for  (shell, occ)  in conf.shells
-        if      occ == 0  ||  occ == 2*(2*shell.l + 1)
-        else    ns = ns + 1
-        end
-    end
-    
-    if      ns == 0   return ( LSjj.ZeroOpenShell() )
-    elseif  ns == 1   return ( LSjj.OneOpenShell() )
-    elseif  ns == 2   return ( LSjj.TwoOpenShells() )
-    elseif  ns == 3   return ( LSjj.ThreeOpenShells() )
-    else    error("stop a")
-    end
-    
-end ==#
 
 
 """
@@ -1227,98 +983,6 @@ function Basics.extractNonrelativisticShellList(multiplets::Array{Multiplet,1})
 end
 
 
-#== August 2025, Basics.FromBasis(), 
-"""
-`Basics.extractNonrelativisticConfigurations(basis::Basis)  
-    ... extract all nonrelativistic configurations that contribute to the given set of CSF in basis.csfs. 
-        A confList::Array{Configuration,1} is returned.
-"""
-function Basics.extractNonrelativisticConfigurations(basis::Basis)
-    confList  = Configuration[]
-    subshells = basis.subshells
-    
-    for  csf  in basis.csfs
-        newShells = Dict{Shell,Int64}();    NoElectrons = 0
-        for  i = 1:length(subshells)
-            n = subshells[i].n;    l = Basics.subshell_l(subshells[i]);    occ = csf.occupation[i]
-            shell = Shell(n,l)
-            if    haskey(newShells, shell)    newShells[shell] = newShells[shell] + occ;   NoElectrons = NoElectrons + occ
-            else  
-                if   occ > 0  newShells = Base.merge( newShells, Dict( shell => occ));     NoElectrons = NoElectrons + occ   end
-            end
-        end
-        if  basis.NoElectrons != NoElectrons    error("stop a")
-        else
-            conf = Configuration(newShells, NoElectrons)
-            if  conf in confList    continue;    else    push!( confList,  conf)    end
-        end
-    end 
-    
-    return( confList )
-end  ==#
-
-
-#== August 2025, Basics.FromBasis()
-"""
-`Basics.extractNonrelativisticConfigurationFromCsfR(csf::CsfR,  basis::Basis)`  
-    ... extract the nonrelativistic configuration from the given CSF that is defined in basis.csfs. 
-        A conf::Configuration is returned.
-"""
-function  Basics.extractNonrelativisticConfigurationFromCsfR(csf::CsfR,  basis::Basis)
-    subshells = basis.subshells
-    
-    newShells = Dict{Shell,Int64}();    NoElectrons = 0
-    for  i = 1:length(subshells)
-        n = subshells[i].n;    l = Basics.subshell_l(subshells[i]);    occ = csf.occupation[i]
-        shell = Shell(n,l)
-        if    haskey(newShells, shell)    newShells[shell] = newShells[shell] + occ;   NoElectrons = NoElectrons + occ
-        else  
-            if   occ > 0  newShells = Base.merge( newShells, Dict( shell => occ));     NoElectrons = NoElectrons + occ   end
-        end
-    end
-    
-    if      basis.NoElectrons != NoElectrons    error("stop a")
-    else    conf = Configuration(newShells, NoElectrons)
-    end 
-    
-    return( conf )
-end  ==#
-
-    
-#== August 2025, Basics.FromBasis()
-"""
-`Basics.extractOpenShells(conf::Configuration)`  
-    ... extract the open (nonrelativistic) shells in conf; a list::Array{Shell,1} is returned.
-"""
-function Basics.extractOpenShells(conf::Configuration)
-    shells = Shell[]
-    for  (shell, occ)  in conf.shells
-        if      occ == 0  ||  occ == 2*(2*shell.l + 1)
-        else    push!(shells, shell)
-        end
-    end
-    
-    return( shells )        
-end ==#
-
-    
-#== August 2025, Basics.OpenSubshells()
-"""
-`Basics.extractOpenSubshells(conf::ConfigurationR)`  
-    ... extract the open (relativistic) subshells in conf; a list::Array{Subshell,1} is returned.
-"""
-function Basics.extractOpenSubshells(conf::ConfigurationR)
-    subshells = Subshell[]
-    for  (subsh, occ)  in conf.subshells
-        if      occ == 0  ||  occ == Basics.twice(Basics.subshell_j(subsh)) + 1
-        else    push!(subshells, subsh)
-        end
-    end
-    
-    return( subshells )        
-end ==#
-
-
 """
 `Basics.extractOpenShellQNfromCsfR(csfR::CsfR, basis::Basis)`  
     ... extracts the quantum numbers of the nonrelativistic open shells from the given csfr. Here, we assume that csfR is 
@@ -1359,57 +1023,6 @@ function Basics.extractOpenShellQNfromCsfR(csfR::CsfR, basis::Basis)
     
     return( wa )
 end
-
-
-#== August 2025, Basics.RelativisticConfigurations()
-"""
-`Basics.extractRelativisticConfigurations(basis::Basis)  
-    ... extract all relativistic configurations that contribute to the given set of CSF in basis.csfs. 
-        A confList::Array{ConfigurationR,1} is returned.
-"""
-function Basics.extractRelativisticConfigurations(basis::Basis)
-    confList  = ConfigurationR[];    subshells = basis.subshells
-    
-    for  csf  in basis.csfs
-        newSubshells = Dict{Subshell,Int64}();    NoElectrons = 0
-        for  (i, subsh) in enumerate(subshells)
-            occ = csf.occupation[i]
-            if   occ > 0  newSubshells = Base.merge( newSubshells, Dict( subsh => occ));     NoElectrons = NoElectrons + occ   end
-        end
-        if    basis.NoElectrons != NoElectrons    error("stop a")
-        else  conf = ConfigurationR(newSubshells, NoElectrons)
-                if  conf in confList    continue;    else    push!( confList,  conf)    end
-        end
-    end 
-    
-    return( confList )
-end
-
-
-"""
-`Basics.extractRelativisticConfigurations(basis::Basis, totalJ::AngularJ64)  
-    ... extract all relativistic configurations that contribute to the given set of CSF
-        with total angular momentum totalJ::AngularJ64 in basis.csfs. 
-        A confList::Array{ConfigurationR,1} is returned.
-"""
-function Basics.extractRelativisticConfigurations(basis::Basis, totalJ::AngularJ64)
-    confList  = ConfigurationR[];    subshells = basis.subshells
-    
-    for  csf  in basis.csfs
-        if  csf.J != totalJ     continue    end
-        newSubshells = Dict{Subshell,Int64}();    NoElectrons = 0
-        for  (i, subsh) in enumerate(subshells)
-            occ = csf.occupation[i]
-            if   occ > 0  newSubshells = Base.merge( newSubshells, Dict( subsh => occ));     NoElectrons = NoElectrons + occ   end
-        end
-        if    basis.NoElectrons != NoElectrons    error("stop a")
-        else  conf = ConfigurationR(newSubshells, NoElectrons)
-                if  conf in confList    continue;    else    push!( confList,  conf)    end
-        end
-    end 
-    
-    return( confList )
-end  ==#
 
 
 """
@@ -1613,47 +1226,6 @@ function Basics.extractSubshellList(conf::Configuration, orbitals::Dict{Subshell
     
     return( notSubshells )
 end
-
-
-#== August 2025, OccupationDifference()
-"""
-`Basics.extractShellOccupationDifference(confa::Configuration, confb::Configuration)`  
-    ... extract the differences in the occupation of shells: occupation(confa) - occupation(confb).
-        Only those shells are returned for which qa - qb != 0.
-        A list::Array{Tuple(Shell, Int64),1} is returned. 
-"""
-function Basics.extractShellOccupationDifference(confa::Configuration, confb::Configuration)
-    occList   = Tuple{Shell, Int64}[]
-    shellList = Basics.extractShellList([confa, confb])
-    
-    for shell in shellList
-        if haskey(confa.shells, shell)  qa = confa.shells[shell]   else   qa = 0  end
-        if haskey(confb.shells, shell)  qb = confb.shells[shell]   else   qb = 0  end
-        if qa - qb != 0     push!(occList, (shell, qa - qb) )                     end
-    end
-    
-    return( occList )
-end
-
-
-"""
-`Basics.extractShellOccupationDifference(confa::ConfigurationR, confb::ConfigurationR)`  
-    ... extract the differences in the occupation of subshells: occupation(confa) - occupation(confb).
-        Only those subshells are returned for which qa - qb != 0.
-        A list::Array{Tuple(Subshell, Int64),1} is returned. 
-"""
-function Basics.extractShellOccupationDifference(confa::ConfigurationR, confb::ConfigurationR)
-    occList   = Tuple{Subshell, Int64}[]
-    shList    = Basics.extractSubshellList([confa, confb])
-    
-    for subsh in shList
-        if haskey(confa.subshells, subsh)  qa = confa.subshells[subsh]   else   qa = 0  end
-        if haskey(confb.subshells, subsh)  qb = confb.subshells[subsh]   else   qb = 0  end
-        if qa - qb != 0     push!(occList, (subsh, qa - qb) )                           end
-    end
-    
-    return( occList )
-end ==#
 
 
 """

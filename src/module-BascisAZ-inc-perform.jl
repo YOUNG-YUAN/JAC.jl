@@ -110,33 +110,36 @@ function Basics.perform(computation::Atomic.Computation; output::Bool=false)
             if output    results = Base.merge( results, Dict("photoionization lines:" => outcome) )                 end
         elseif  typeof(computation.processSettings) == PhotoDoubleIonization.Settings   
             outcome = PhotoDoubleIonization.computeLines(finalMultiplet, initialMultiplet, nModel, computation.grid, computation.processSettings) 
-            if output    results = Base.merge( results, Dict("Single-photon double-ionization lines:" => outcome) ) end
+            if output    results = Base.merge( results, Dict("Single-photon double-ionization lines:" => outcome) )      end
         elseif  typeof(computation.processSettings) == PhotoExcitation.Settings
             outcome = PhotoExcitation.computeLines(finalMultiplet, initialMultiplet, computation.grid, computation.processSettings) 
-            if output    results = Base.merge( results, Dict("photo-excitation lines:" => outcome) )                end
+            if output    results = Base.merge( results, Dict("photo-excitation lines:" => outcome) )                     end
         elseif  typeof(computation.processSettings) == PhotoExcitationAutoion.Settings  
             outcome = PhotoExcitationAutoion.computePathways(finalMultiplet, intermediateMultiplet, initialMultiplet, nModel, 
                                                                 computation.grid, computation.processSettings) 
-            if output    results = Base.merge( results, Dict("photo-excitation-autoionization pathways:" => outcome) )      end
+            if output    results = Base.merge( results, Dict("photo-excitation-autoionization pathways:" => outcome) )   end
         elseif  typeof(computation.processSettings) == PhotoExcitationFluores.Settings
             outcome = PhotoExcitationFluores.computePathways(finalMultiplet, intermediateMultiplet, initialMultiplet, 
                                                                 computation.grid, computation.processSettings) 
-            if output    results = Base.merge( results, Dict("photo-excitation-fluorescence pathways:" => outcome) )        end
+            if output    results = Base.merge( results, Dict("photo-excitation-fluorescence pathways:" => outcome) )     end
+        elseif  typeof(computation.processSettings) == PhotoEmission.Settings
+            outcome = PhotoEmission.computeLines(finalMultiplet, initialMultiplet, computation.grid, computation.processSettings) 
+            if output    results = Base.merge( results, Dict("radiative lines:" => outcome) )                            end
         elseif  typeof(computation.processSettings) == ResonantInelastic.Settings 
             outcome = ResonantInelastic.computePathways(finalMultiplet, intermediateMultiplet, initialMultiplet, 
                                                         computation.grid, computation.processSettings) 
-        elseif  typeof(computation.processSettings) == PhotoEmission.Settings
-            outcome = PhotoEmission.computeLines(finalMultiplet, initialMultiplet, computation.grid, computation.processSettings) 
-            if output    results = Base.merge( results, Dict("radiative lines:" => outcome) )                       end
+        elseif  typeof(computation.processSettings) == CoulombExcitation.Settings
+            outcome = CoulombExcitation.computeLines(finalMultiplet, initialMultiplet, computation.grid, computation.processSettings) 
+            if output    results = Base.merge( results, Dict("Coulomb excitation lines:" => outcome) )                   end
         elseif  typeof(computation.processSettings) == RadiativeAuger.Settings
             outcome = RadiativeAuger.computeLines(finalMultiplet, initialMultiplet, computation.grid, computation.processSettings) 
-            if output    results = Base.merge( results, Dict("radiative Auger sharings:" => outcome) )              end
+            if output    results = Base.merge( results, Dict("radiative Auger sharings:" => outcome) )                   end
         elseif  typeof(computation.processSettings) == PhotoRecombination.Settings 
             outcome = PhotoRecombination.computeLines(finalMultiplet, initialMultiplet, nModel, computation.grid, computation.processSettings) 
-            if output    results = Base.merge( results, Dict("photo recombination lines:" => outcome) )             end
+            if output    results = Base.merge( results, Dict("photo recombination lines:" => outcome) )                  end
         elseif  typeof(computation.processSettings) == ImpactExcitation.Settings 
             outcome = ImpactExcitation.computeLines(finalMultiplet, initialMultiplet, nModel, computation.grid, computation.processSettings) 
-            if output    results = Base.merge( results, Dict("impact-excitation lines:" => outcome) )               end
+            if output    results = Base.merge( results, Dict("impact-excitation lines:" => outcome) )                    end
         elseif  typeof(computation.processSettings) == InternalRecombination.Settings 
             outcome = InternalRecombination.computeLines(finalMultiplet, initialMultiplet, nModel, computation.grid, computation.processSettings) 
             if output    results = Base.merge( results, Dict("internal-recombination lines:" => outcome) )          end

@@ -801,84 +801,6 @@ function Basics.generateBasis(refConfigs::Array{Configuration,1}, symmetries::Ar
 end
 
 
-#== August 2025, Basics.RelativisticConfigurations()
-"""
-`Basics.generateConfigurationRs(conf::Configuration)`  
-    ... to split/decompose a non-relativistic configuration into an list of relativistic ConfigurationR[]. The proper 
-        occupuation of the relativistic subshells is taken into account.
-"""
-function Basics.generateConfigurationRs(conf::Configuration)
-    subshellList = Subshell[]
-    confList     = ConfigurationR[]
-
-    initialize = true;    NoElectrons = 0
-    for (k, occ)  in conf.shells
-        NoElectrons     = NoElectrons + occ
-        wa              = Basics.shellSplitOccupation(k, occ)
-        subshellListNew = Dict{Subshell,Int64}[]
-
-        if  initialize
-            subshellListNew = wa;    initialize = false
-        else
-            for  s in 1:length(subshellList)
-                for  a in 1:length(wa)
-                    wb = Base.merge( subshellList[s], wa[a] )
-                    push!(subshellListNew, wb)
-                end
-            end
-        end
-        subshellList = deepcopy(subshellListNew)
-    end
-    
-    for subsh in subshellList
-    wa = ConfigurationR(subsh, NoElectrons)
-    push!(confList, wa)
-    end
-
-    return( confList )
-end  ==#
-
-
-#==
-"""
-`Basics.generate("configuration list: relativistic", conf::Configuration)`  
-    ... to split/decompose a non-relativistic configuration into an list of relativistic ConfigurationR[]. The proper 
-        occupuation of the relativistic subshells is taken into account.
-"""
-function Basics.generate(sa::String, conf::Configuration)
-    subshellList = Subshell[]
-    confList     = ConfigurationR[]
-
-    !(sa == "configuration list: relativistic")  &&   error("Unsupported keystring = $sa")
-
-    initialize = true;    NoElectrons = 0
-    for (k, occ)  in conf.shells
-        NoElectrons     = NoElectrons + occ
-        wa              = Basics.shellSplitOccupation(k, occ)
-        subshellListNew = Dict{Subshell,Int64}[]
-
-        if  initialize
-            subshellListNew = wa;    initialize = false
-        else
-            for  s in 1:length(subshellList)
-                for  a in 1:length(wa)
-                    wb = Base.merge( subshellList[s], wa[a] )
-                    push!(subshellListNew, wb)
-                end
-            end
-        end
-        subshellList = deepcopy(subshellListNew)
-    end
-    
-    for subsh in subshellList
-    wa = ConfigurationR(subsh, NoElectrons)
-    push!(confList, wa)
-    end
-
-    return( confList )
-end  ==#
-
-
 """
 `Basics.generateConfigurations(refConfigs::Array{Configuration,1}, fromShells::Array{Shell,1}, toShells::Array{Shell,1})`  
     ... generates all nonrelativistic configurations due to the (single) excitation of an electron fromShells --> toShells
@@ -1078,63 +1000,7 @@ function Basics.generateConfigurationsForExcitationScheme(confs::Array{Configura
 end
 
 
-
-#==  August 2025, replaced by Basics.AddElectrons(), ...
-"""
-`Basics.generateConfigurationsWithAdditionalElectron(confs::Array{Configuration,1}, addShells::Array{Shell,1})`  
-    ... generates a list of non-relativistic configurations for the given (reference) confs and with one additional electron
-        from the given addShells. A list of possible newConfs::Array{Configuration,1} is returned.
-"""
-function Basics.generateConfigurationsWithAdditionalElectron(confs::Array{Configuration,1}, addShells::Array{Shell,1})
-    newConfList = Configuration[];     NoElectrons = confs[1].NoElectrons + 1
-    #
-    for  conf in confs
-        for  ashell in addShells
-            shells = copy(conf.shells);    addConf = true
-            if  haskey(shells, ashell)  
-                if  shells[ashell] + 1 > 4*ashell.l + 2     addConf = false     end    
-                    shells[ashell] = shells[ashell] + 1
-            else    shells[ashell] = 1
-            end
-            if  addConf   push!(newConfList, Configuration(shells, NoElectrons))    end 
-        end
-    end 
-    newConfList = unique(newConfList)
-    
-    return( newConfList )
-end
-
-
-
-"""
-`Basics.generateConfigurationsWithAdditionalElectrons(confs::Array{Configuration,1}, addShells::Array{Shell,1})`  
-    ... generates a list of non-relativistic configurations for the given (reference) confs and with additional electrons
-        in each of the given addShells. If the same shell appears twice (or more) in addShells, two or more electrons are
-        added to this shell, if possible. A list of possible newConfs::Array{Configuration,1} is returned.
-"""
-function Basics.generateConfigurationsWithAdditionalElectrons(confs::Array{Configuration,1}, addShells::Array{Shell,1})
-    newConfList = Configuration[];     NoElectrons = confs[1].NoElectrons + length(addShells)
-    #
-    for  conf in confs
-        shells = copy(conf.shells);    addConf = true
-        for  ashell in addShells
-            if  haskey(shells, ashell)  
-                if  shells[ashell] + 1 > 4*ashell.l + 2     addConf = false     end    
-                    shells[ashell] = shells[ashell] + 1
-            else    shells[ashell] = 1
-            end
-        end
-        if  addConf   push!(newConfList, Configuration(shells, NoElectrons))    end 
-    end 
-    newConfList = unique(newConfList)
-    
-    return( newConfList )
-end
-==#
-
-
-
-#  August 2025, replaced by Basics.AddElectrons(), Basics.ExciteElectrons(), ...
+#==  August 2025, replaced by Basics.AddElectrons(), Basics.ExciteElectrons(), ...
 """
 `Basics.generateConfigurationsWithElectronCapture(confs::Array{Configuration,1}, fromShells::Array{Shell,1}, toShells::Array{Shell,1}, noex::Int64)`  
     ... generates a list of non-relativistic configurations for the given (reference) confs and with one additional (cpatured) 
@@ -1164,37 +1030,7 @@ function Basics.generateConfigurationsWithElectronCapture(confs::Array{Configura
     
     return( newConfList )
 end 
-
-
-
-#==  August 2025, replaced by Basics.AddElectrons(), Basics.ExciteElectrons(), ...
-"""
-`Basics.generateConfigurationsWithElectronLoss(confs::Array{Configuration,1}, fromShells::Array{Shell,1})`  
-    ... generates a list of non-relativistic configurations for the given (reference) confs and with one removed (ionized) 
-        electron fromShells.
-"""
-function Basics.generateConfigurationsWithElectronLoss(confs::Array{Configuration,1}, fromShells::Array{Shell,1})
-    newConfList = Configuration[];     NoElectrons = confs[1].NoElectrons - 1
-    # Now remove one (ionized) electron from the fromShells of all configurations in confList
-    for  conf in confs
-        # Take one electron fromShells and `remove' it from conf
-        for  fromShell  in  fromShells
-            newShells = Dict{Shell,Int64}()
-            for  shell  in  keys(conf.shells)
-                if      shell == fromShell  &&  conf.shells[shell] == 1
-                elseif  shell == fromShell
-                        newShells = Base.merge( newShells, Dict( shell => conf.shells[shell] - 1))
-                else    newShells = Base.merge( newShells, Dict( shell => conf.shells[shell]))
-                end
-            end
-            push!( newConfList, Configuration( newShells, NoElectrons))
-            if  false  println(">> Generate $(Configuration( newShells, NoElectrons)) with electron loss.")   end
-        end
-    end
-    newConfList = unique(newConfList)
-    
-    return( newConfList )
-end  ==#
+==#
 
 
 """

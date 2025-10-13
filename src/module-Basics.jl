@@ -16,6 +16,9 @@ include("module-Basics-inc-abstract.jl")
 include("module-Basics-inc-second.jl")
 
 export  add, analyze, compute, diagonalize, estimate, generate, interpolate, integrate, modify, perform, provide, tabulate       
+
+export  checkConfigurations,  displayConfiguration,  displayConfigurations,  extractConfiguration,  extractConfigurations,  
+        extractFromConfiguration,  extractFromConfigurations,  generateConfiguration,  generateConfigurations
         
 # Functions/methods that are later added to the module Basics
 function add                                                    end

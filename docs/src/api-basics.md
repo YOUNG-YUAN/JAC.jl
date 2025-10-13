@@ -14,7 +14,14 @@ Order   = [:type, :function]
 ##  Basics: data types
 ```@autodocs ; canonical=false
 Modules = [Basics]
-Pages   = ["Basics-inc-abstract.jl", "module-Basics-inc-first.jl", "module-Basics-inc-second.jl"]
+Pages   = ["module-Basics-inc-abstract.jl", "module-Basics-inc-first.jl", "module-Basics-inc-second.jl"]
+Order   = [:type, :function]
+```
+
+##  Basics: electron configurations
+```@autodocs ; canonical=false
+Modules = [Basics]
+Pages   = ["module-BascisAZ-inc-configurations.jl"]
 Order   = [:type, :function]
 ```
 

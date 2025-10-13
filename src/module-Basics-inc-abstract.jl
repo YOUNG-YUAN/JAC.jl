@@ -479,9 +479,10 @@ end
     + TotalAM                 ... to extract the total angular momenta J that are associated with the configuration.
     + ValenceOccupation       ... to extract the remaining configuration beyond a given (closed) core configuration.
     
-    + FineStructure           ... to display the total J fine-structure levels a configuration (without energies).
-    + FineStructureLS         ... to display the total LSJ fine-structure levels a configuration (without energies).
-    + HundRules               ... to display the total LSJ fine-structure levels, ordered by Hund's themes.
+    + FineStructure           ... to display the total J fine-structure levels of a configuration (without energies).
+    + FineStructureLS         ... to display the total LSJ fine-structure levels of a configuration (without energies).
+    + HyperfineStructure      ... to display the total F hyperfine-structure levels of a configuration (without energies).
+    + HundRules               ... to display the total LSJ fine-structure levels, ordered by Hund's themes (not yet).
         
 """
 abstract type  AbstractConfigurationTheme                                  end
@@ -527,17 +528,18 @@ struct   ValenceShells                  <:  AbstractConfigurationTheme     end
 struct   FineStructure                  <:  AbstractConfigurationTheme     end
 struct   FineStructureLS                <:  AbstractConfigurationTheme     end
 struct   HundsRules                     <:  AbstractConfigurationTheme     end
+struct   HyperfineStructure             <:  AbstractConfigurationTheme     end
 
 export  AbstractConfigurationTheme, AddElectrons, ExciteElectrons, RemoveElectrons, RestrictExcitations,
-        ForAutoIonization, ForElectronCapture, ForDielectronicCapture, ForHollowIons, ForPhotoEmission, ForPhotoIonization, 
-        ForPhotoRecombination, ForRasExcitations, ForStepwiseDecay, GeneralizedConfigurations,
-        GroundConfiguration, MeanConfiguration, RelativisticConfigurations, 
+        ForAutoIonization, ForElectronCapture, ForDielectronicCapture, ForDielectronicRecombination, ForHollowIons, 
+        ForPhotoEmission, ForPhotoIonization,  ForPhotoRecombination, ForRasExcitations, ForStepwiseDecay, 
+        GeneralizedConfigurations, GroundConfiguration, MeanConfiguration, RelativisticConfigurations, 
         SuperConfiguration,
         AllShells, ByNumber, ByParity, ClosedCore, ClosedShells, ClosedSubshells, ContractShells, ExcitationLevel, 
         ExpandShells, FromBasis, FromMultiplet, GetParity, IsOccupied, LeadingConfiguration, LeadingConfigurationR, 
         MeanOccupation, Multiplicity, NonrelativisticBasis, NumberOfElectrons, OccupationDifference, OpenShellNumber, 
         OpenShells, OpenSubshells, TotalAM, ValenceOccupation, ValenceShells,
-        FineStructure, FineStructureLS, HundsRules
+        FineStructure, FineStructureLS, HundsRules, HyperfineStructure
 
         
 """
