@@ -32,6 +32,7 @@ incPlasma               = true  ## Requires: incProperties
 incStrongField          = true
 incAtomicCompass        = true
 incRacahAlgebra         = true
+incDeepLearning         = true
 
 #==
 incAdvancedProcesses    = false
@@ -48,16 +49,18 @@ using  Dates,  Printf,  BSplineKit, LinearAlgebra, SpecialFunctions, QuadGK, Cub
 
 export AbstractCImethod, AbstractConfigurationRestriction, AbstractEeInteraction, AbstractPotential, AbstractQedModel, AbstractStartOrbitals,
        AbstractProcessSettings, AbstractEmpiricalSettings, AbstractPlasmaModel, AbstractPropertySettings, AbstractLineShiftSettings,
+       AbstractNeutralNetwork, AbstractNeutralNetworkRequest, Application,
        add, AlphaX, AllShells, AlphaVariation, analyze, AnapoleMoment, 
        AngularJ64, AngularM64, AngularJ, AngularMomentum, AddElectrons, 
        AsfSettings, Atomic, AtomicState, AtomicStructure, Auger, AugerInPlasma, AutoIonization, AverageAtom, AtomicCompass,
+       AtomicModel, AtomicFeatures,
        Basics, Basis, Beam, BeamPhotoExcitation, BreitInteraction, Bsplines, BsplinesN, ByMultipoles, ByNumber, ByParity, 
        CartesianVector, Cartesian2DFieldVector, Cartesian3DFieldVector, CiSettings, CiExpansion, ClebschGordan, CloseCoupling, 
        compute, convertUnits, Compton, Configuration, ConfigurationR, 
        Cascade, Continuum, CorePolarization, Coulex, CoulombExcitation, Coulion, CoulombBreit, CoulombGaunt, 
        CoulombInteraction, CoulombIonization, CsfR, ClosedCore, ClosedShells, ClosedSubshells, ContractShells, checkConfigurations,
        computeCrossSections,  computeForPedestrians,  computeLevelEnergies,  computeLifetimes,  computeResonanceStrength, computeTransitionRates, 
-       diagonalize, Defaults, DecayYield, DielectronicRecombination, Dierec, Djpq, DoubleAutoIonization, DoubleAuger, 
+       diagonalize, Defaults, DecayYield, DielectronicRecombination, Dierec, Djpq, DoubleAutoIonization, DoubleAuger, DeepLearning,
        DiagonalCoulomb, DefaultQuantizationAxis, displayCouplings, displayConfiguration,  displayConfigurations,
        Eimex, ElectronCapture, ElecCapture, estimate, ElectricDipoleMoment, Einstein, EinsteinX, EmMultipole, evaluate, ExpStokes, 
        Empirical, ExciteElectrons, ExcitationLevel, ExpandShells, estimateCrossSections, extractConfiguration,  extractConfigurations,  
@@ -90,7 +93,7 @@ export AbstractCImethod, AbstractConfigurationRestriction, AbstractEeInteraction
        RacahAlgebra, RacahExpression, Radial, RadialIntegrals, Radiative, RadiativeAuger, RAuger, RasSettings, RasStep, 
        RasExpansion, RayleighCompton, recast, Rec, REDA, READI, Representation, ReducedDensityMatrix, RadiativeOpacity,
        RestrictMaximumDisplacements, RestrictNoElectronsTo, RestrictParity, RestrictToShellDoubles, RequestMinimumOccupation, RequestMaximumOccupation,
-       ResonantInelastic, RemoveElectrons, RestrictExcitations, RelativisticConfigurations, 
+       ResonantInelastic, RemoveElectrons, RestrictExcitations, RelativisticConfigurations, run,
        SchiffMoment, Semiempirical, setDefaults, Shell, ShellSelection, SolidAngle, Spectroscopy, SphericalTensor, SpinAngular, StarkShift,
        StartFromHydrogenic, StartFromPrevious, StrongField, StrongField2, Subshell, StaticQuantizationAxis, StaticField, SelfConsistent, 
        SuperConfiguration,
@@ -234,6 +237,11 @@ end
 if  incRacahAlgebra
 include("module-RacahAlgebra.jl");      using ..RacahAlgebra
 include("module-SphericalTensor.jl");   using ..SphericalTensor
+end
+
+if  incDeepLearning
+include("module-AtomicFeatures.jl");    using ..AtomicFeatures
+include("module-DeepLearning.jl");      using ..DeepLearning
 end
 
 # Basic functions/methods to manipulate these data

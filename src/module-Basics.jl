@@ -15,7 +15,8 @@ include("module-Basics-inc-first.jl")
 include("module-Basics-inc-abstract.jl")
 include("module-Basics-inc-second.jl")
 
-export  add, analyze, compute, diagonalize, estimate, generate, interpolate, integrate, modify, perform, provide, tabulate       
+export  add, analyze, compute, diagonalize, estimate, generate, interpolate, integrate, modify, perform, provide, run,
+        tabulate       
 
 export  checkConfigurations,  displayConfiguration,  displayConfigurations,  extractConfiguration,  extractConfigurations,  
         extractFromConfiguration,  extractFromConfigurations,  generateConfiguration,  generateConfigurations
@@ -138,6 +139,7 @@ function readOrbitalFileGrasp92                                 end
 function readMixFileRelci                                       end
 function readMixingFileGrasp18                                  end
 function recast                                                 end
+function run                                                    end
 function selectLevel                                            end
 function selectLevelPair                                        end
 function selectLevelTriple                                      end

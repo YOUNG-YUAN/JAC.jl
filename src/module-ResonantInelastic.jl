@@ -175,14 +175,16 @@ function  computeAmplitudesProperties(pathway::ResonantInelastic.Pathway, grid::
     width = Defaults.convertUnits("energy: to atomic", settings.width)
     
     # Combine the amplitudes of the proper gauges to form the relativeCS
-    ampCou = ampBab = ComplexF64(0.)
+    ampCou = ampBab = ComplexF64(0.);    ampEx = ampEm = 0.
     for exChannel in newExChannels
         for emChannel in newEmChannels
+            ampEx = ampEx + abs(exChannel.amplitude)  # Just to understand which part is always zero
+            ampEm = ampEm + abs(emChannel.amplitude)  # Just to understand which part is always zero
             if  exChannel.gauge == Basics.Coulomb  &&  emChannel.gauge == Basics.Babushkin     continue    end
             if  emChannel.gauge == Basics.Coulomb  &&  exChannel.gauge == Basics.Babushkin     continue    end
-            if      exChannel.gauge == Basics.Coulomb    ||  emChannel.gauge == Basics.Coulomb
+            if      exChannel.gauge == Basics.Coulomb    &&  emChannel.gauge == Basics.Coulomb
                 ampCou = ampCou + emChannel.amplitude * conj(exChannel.amplitude)
-            elseif  exChannel.gauge == Basics.Babushkin  ||  emChannel.gauge == Basics.Babushkin
+            elseif  exChannel.gauge == Basics.Babushkin  &&  emChannel.gauge == Basics.Babushkin
                 ampBab = ampBab + emChannel.amplitude * conj(exChannel.amplitude)
             else
                 ampCou = ampCou + emChannel.amplitude * conj(exChannel.amplitude)
@@ -191,7 +193,7 @@ function  computeAmplitudesProperties(pathway::ResonantInelastic.Pathway, grid::
         end
     end
 
-    @show ampCou, ampBab
+    @show ampCou, ampBab, ampEx, ampEm
     productF   = EmProperty(    ampCou.re,     ampBab.re )
     relativeCS = EmProperty(abs(ampCou)^2, abs(ampBab)^2)
     pathway    = ResonantInelastic.Pathway( pathway.initialLevel, pathway.intermediateLevel, pathway.finalLevel, 
