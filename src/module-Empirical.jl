@@ -7,7 +7,8 @@
 module Empirical
 
 
-using ..Basics, ..Defaults, ..Distribution, ..Radial, ..ManyElectron, ..Nuclear, ..ImpactIonization, ..PeriodicTable, ..SelfConsistent
+using  ..AtomicState, ..Basics, ..Continuum, ..Defaults, ..Distribution, ..Radial, ..ManyElectron, ..Nuclear, 
+       ..InteractionStrength, ..ImpactIonization, ..PeriodicTable, ..SelfConsistent
 
 """
 `abstract type Empirical.AbstractEmpiricalApproximation` 
@@ -18,13 +19,43 @@ using ..Basics, ..Defaults, ..Distribution, ..Radial, ..ManyElectron, ..Nuclear,
     + LorentzianProfile     ... assumes a Lorentzian line profile L^Lorentzian (omega)
 """
 abstract type  AbstractEmpiricalApproximation                                end
+struct     ScaledHydrogenic              <:  AbstractEmpiricalApproximation  end
+struct     UsingJAC                      <:  AbstractEmpiricalApproximation  end
+
 struct     Bohr1913                      <:  AbstractEmpiricalApproximation  end
-struct     Kramers1923                   <:  AbstractEmpiricalApproximation  end
 struct     Bethe1931                     <:  AbstractEmpiricalApproximation  end
 struct     Axelrod1980                   <:  AbstractEmpiricalApproximation  end
 struct     KozmaFranson1992              <:  AbstractEmpiricalApproximation  end
 
-export  AbstractEmpiricalApproximation, Bohr1913, Kramers1923, Bethe1931, Axelrod1980, KozmaFranson1992 
+
+export  AbstractEmpiricalApproximation, GivenEinsteinA, ScaledHydrogenic, UsingJAC
+        Bohr1913, Bethe1931, Axelrod1980, KozmaFranson1992
+   
+
+"""
+`struct  GivenEinsteinA  <:  Empirical.AbstractEmpiricalApproximation`  
+    ... to communicate an externally given Einstein-A value, together with the multipole and energy
+        of the transition i --> f.
+
+    + multipole   ::EmMultipole     ... Multipole of the transition.
+    + energy      ::Float64         ... Energy of transition.
+    + rate        ::Float64         ... Einstein-A value.
+"""
+struct  GivenEinsteinA  <:  Empirical.AbstractEmpiricalApproximation
+    multipole     ::EmMultipole
+    energy        ::Float64
+    rate          ::Float64
+end
+
+
+# `Base.show(tripleA::GivenEinsteinA)`  ... provides a String notation for the variable tripleA::GivenEinsteinA.
+function Base.show(tripleA::GivenEinsteinA)
+    sa = "Given Einstein-A value for $(tripleA.multiple) transition with E_if [Hartree] = $(tripleA.multipole) " *
+         "and A_if [a.u.] = $(tripleA.rate) "
+    print(io, sa, "\n")
+end
+   
+        
 
 #################################################################################################################################
 #################################################################################################################################

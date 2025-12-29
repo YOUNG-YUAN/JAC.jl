@@ -61,7 +61,7 @@ export AbstractCImethod, AbstractConfigurationRestriction, AbstractEeInteraction
        CoulombInteraction, CoulombIonization, CsfR, ClosedCore, ClosedShells, ClosedSubshells, ContractShells, checkConfigurations,
        computeCrossSections,  computeForPedestrians,  computeLevelEnergies,  computeLifetimes,  computeResonanceStrength, computeTransitionRates, 
        diagonalize, Defaults, DecayYield, DielectronicRecombination, Dierec, Djpq, DoubleAutoIonization, DoubleAuger, DeepLearning,
-       DiagonalCoulomb, DefaultQuantizationAxis, displayCouplings, displayConfiguration,  displayConfigurations,
+       DiagonalCoulomb, DefaultQuantizationAxis, displayCouplings, displayConfiguration,  displayConfigurations, Distribution,
        Eimex, ElectronCapture, ElecCapture, estimate, ElectricDipoleMoment, Einstein, EinsteinX, EmMultipole, evaluate, ExpStokes, 
        Empirical, ExciteElectrons, ExcitationLevel, ExpandShells, estimateCrossSections, extractConfiguration,  extractConfigurations,  
        extractFromConfiguration, extractFromConfigurations, EmProperty, EmPropertyC,

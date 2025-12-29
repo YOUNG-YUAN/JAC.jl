@@ -151,15 +151,22 @@ function  computeAmplitudesProperties(pathway::ResonantInelastic.Pathway, grid::
     ## println(">> pathway: $(pathway.initialLevel.index)--$(pathway.intermediateLevel.index)--$(pathway.finalLevel.index) ...")
     #
     Defaults.setDefaults("relativistic subshell list", pathway.intermediateLevel.basis.subshells; printout=false)
-    
     intermediateLevel = deepcopy(pathway.intermediateLevel)
-    if settings.calcRixsCI    intermediateLevel =  Basics.modifyLevelMixing(intermediateLevel, settings.ciEnhancement)   end 
+    initialLevel      = deepcopy(pathway.initialLevel)
+    
+    #  The particular application requires to decide, which levels need to be "mixed with enhanced factor"
+    
+    ## Farid + Ruben (June 2025): Interference in the RIXS out-channel
+    ## if settings.calcRixsCI    intermediateLevel =  Basics.modifyLevelMixing(intermediateLevel, settings.ciEnhancement)   end 
+    
+    ## Ruben + Johan (Nov 2025): RIXS signals with double excitations
+    if settings.calcRixsCI       initialLevel      =  Basics.modifyLevelMixing(initialLevel, settings.ciEnhancement)        end 
     
     # Compute the amplitudes of the excitation and emission channels separately
     newExChannels = PhotoEmission.Channel[];    newEmChannels = PhotoEmission.Channel[]
     for exChannel in pathway.excitationChannels
         amplitude    = PhotoEmission.amplitude("emission", exChannel.multipole, exChannel.gauge, pathway.omegaIn, 
-                                               intermediateLevel, pathway.initialLevel, grid, display=false, printout=false)
+                                               intermediateLevel, initialLevel, grid, display=false, printout=false)
         newExChannel = PhotoEmission.Channel( exChannel.multipole, exChannel.gauge, amplitude)
         push!( newExChannels, newExChannel)
     end
@@ -394,10 +401,11 @@ end
         returned otherwise.
 """
 function  displayResults(stream::IO, pathways::Array{ResonantInelastic.Pathway,1},  settings::ResonantInelastic.Settings)
-    nx = 163
+    nx = 196
+    #
     println(stream, " ")
-    println(stream, "  RIXS energies, widths and relative F = Re (<f|Mout|m> <m|Min|i>) values" * 
-                    "  (without omega/Gamma-dependent denominator):")
+    println(stream, "  RIXS energies, widths, relative F = Re (<f|Mout|m> <m|Min|i>) values" * 
+                    "  and relative cross sections (without omega/Gamma-dependent denominator):")
     println(stream, " ")
     println(stream, "  ", TableStrings.hLine(nx))
     sa = "    ";   sb = "    "
@@ -407,8 +415,10 @@ function  displayResults(stream::IO, pathways::Array{ResonantInelastic.Pathway,1
     sb = sb * TableStrings.center(50, " omega_in     omega_out    in - out     width(m)  "; na=1)
     sa = sa * TableStrings.center(10, "Multipoles"; na=6)        
     sb = sb * TableStrings.center(10, "in;  out  "; na=5)
-    sa = sa * TableStrings.center(36, " relative |F|^2 "; na=2);   
-    sb = sb * TableStrings.center(36, "  Cou-- Re (<f|Mout|m> <m|Min|i>) --Bab"; na=2)
+    sa = sa * TableStrings.center(36, " relative |F|^2 "; na=3);   
+    sb = sb * TableStrings.center(36, "  Cou-Re (<f|Mout|m> <m|Min|i>)-Bab"; na=3)
+    sa = sa * TableStrings.center(36, " relative CS "; na=2);   
+    sb = sb * TableStrings.center(36, "  Cou-|<f|Mout|m>  <m|Min|i>|^2-Bab"; na=2)
     println(stream, sa);    println(stream, sb);    println(stream, "  ", TableStrings.hLine(nx)) 
     #   
     for  pathway in pathways
@@ -427,9 +437,11 @@ function  displayResults(stream::IO, pathways::Array{ResonantInelastic.Pathway,1
         for  ch in pathway.excitationChannels   push!( exMultipoles, ch.multipole)   end;   exMultipoles = unique(exMultipoles)
         for  ch in pathway.emissionChannels     push!( emMultipoles, ch.multipole)   end;   emMultipoles = unique(emMultipoles)
         mpString = TableStrings.multipoleList(exMultipoles) * ";  " * TableStrings.multipoleList(emMultipoles) * "               "
-        sa = sa * TableStrings.flushleft(18, mpString[1:18];  na=1)
-        sa = sa * @sprintf("%.6e", pathway.productF.Coulomb)     * "          "
-        sa = sa * @sprintf("%.6e", pathway.productF.Babushkin)   * "  "
+        sa = sa * TableStrings.flushleft(18, mpString[1:18];  na=0)
+        sa = sa * @sprintf("% 2.6e", pathway.productF.Coulomb)     * "       "
+        sa = sa * @sprintf("% 2.6e", pathway.productF.Babushkin)   * "      "
+        sa = sa * @sprintf("% 2.6e", pathway.relativeCS.Coulomb)   * "       "
+        sa = sa * @sprintf("% 2.6e", pathway.relativeCS.Babushkin) * " "
         println(stream, sa)
     end
     println(stream, "  ", TableStrings.hLine(nx))
