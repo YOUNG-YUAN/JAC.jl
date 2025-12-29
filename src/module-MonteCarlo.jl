@@ -350,7 +350,7 @@ end
         compared with xValues. The array counts
         is modified but nothing is returned otherwise.
 """
-function addEvents!(counts::Array{Float64,1}, xValues::Array{Float64,1}, hEvents::Array{ParticleEvent,1}))
+function addEvents!(counts::Array{Float64,1}, xValues::Array{Float64,1}, hEvents::Array{ParticleEvent,1})
     for  event  in  hEvents
         for  n  = 1:length(xValues)-1
             if  xValue[n] <= event.energy < xValue[n+1]   counts[n] = counts[n] + 1;   break   end

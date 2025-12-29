@@ -253,7 +253,7 @@ function initializeBasis(configs::Array{Configuration,1}, nuclearModel::Nuclear.
     if  length(levelSymmetries) == 0
         csfs = csfList          # Take all relativistic CSF into account
     else
-        for  csf in CsfList
+        for  csf in csfList
             if  LevelSymmetry(csf.J, csf.parity)  in  levelSymmetries   push!(csfs, csf)    end
         end
     end
